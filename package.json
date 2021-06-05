@@ -7,19 +7,20 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "truffle test"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pawurb/SmartHold-contracts.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Paweł Urbanek",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/pawurb/SmartHold-contracts/issues"
   },
   "homepage": "https://github.com/pawurb/SmartHold-contracts#readme",
   "devDependencies": {
-    "ganache-time-traveler": "^1.0.15"
+    "ganache-time-traveler": "^1.0.15",
+    "truffle": "^5.3.9"
   }
 }
