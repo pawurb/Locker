@@ -18,11 +18,11 @@ The `SmartHoldETH` contract can be used to lock your Ether for a predefined peri
 
 API:
 
-`canWidthraw -> bool` - check if funds can be widthrawn
+`canWithdraw -> bool` - check if funds can be withdrawn
 
-`widthraw -> bool` - widthraw funds
+`withdraw -> bool` - withdraw funds
 
-You can send more Ether to the contract after it has been initialized. Only maker of the contract can widthraw the funds. Don't send ERC20 tokens to this contract because they will be lost forever.
+You can send more Ether to the contract after it has been initialized. Only maker of the contract can withdraw the funds. Don't send ERC20 tokens to this contract because they will be lost forever.
 
 ## SmartHoldERC20
 

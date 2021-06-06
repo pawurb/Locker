@@ -56,12 +56,12 @@ contract SmartHoldETH {
     priceFeed = AggregatorV3Interface(_priceFeed);
   }
 
-  function widthraw() external restricted {
-    require(canWidthraw(), "Cannot widthraw yet!");
+  function withdraw() external restricted {
+    require(canWithdraw(), "Cannot withdraw yet!");
     payable(owner).transfer(address(this).balance);
   }
 
-  function canWidthraw() public view restricted returns (bool) {
+  function canWithdraw() public view restricted returns (bool) {
     bool timeCondition = (depositedAt + (lockForDays * 86400)) < block.timestamp;
     bool priceCondition = false;
 

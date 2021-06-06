@@ -107,7 +107,7 @@ contract("SmartHoldETH", async (accounts) => {
     });
   });
 
-  describe("'widthraw'", async () => {
+  describe("'withdraw'", async () => {
     beforeEach(async() => {
       let snapshot = await timeMachine.takeSnapshot();
       snapshotId = snapshot['result'];
@@ -121,7 +121,7 @@ contract("SmartHoldETH", async (accounts) => {
       let notExpected = false;
 
       try {
-        await deposit.widthraw({from: notOwner});
+        await deposit.withdraw({from: notOwner});
         notExpected = true;
       } catch (err) {
         assert.ok(err);
@@ -130,12 +130,12 @@ contract("SmartHoldETH", async (accounts) => {
       assert.ok(!notExpected)
     });
 
-    it("required time did not pass yet, it does not widthraw funds", async () => {
+    it("required time did not pass yet, it does not withdraw funds", async () => {
       let notExpected = false;
       const ownerBalanceBefore = await web3.eth.getBalance(owner);
 
       try {
-        await deposit.widthraw({from: owner});
+        await deposit.withdraw({from: owner});
         notExpected = true;
       } catch (err) {
         assert.ok(err);
@@ -150,23 +150,23 @@ contract("SmartHoldETH", async (accounts) => {
       assert.ok(ownerBalanceAfter < ownerBalanceBefore);
     });
 
-    it("required time has already passed, it widthraws funds", async () => {
-      const canWidthrawBefore = await deposit.canWidthraw({from: owner});
-      assert.equal(canWidthrawBefore, false);
+    it("required time has already passed, it withdraws funds", async () => {
+      const canWithdrawBefore = await deposit.canWithdraw({from: owner});
+      assert.equal(canWithdrawBefore, false);
       await advanceByDays(lockForDays + 1);
 
-      const canWidthrawAfter = await deposit.canWidthraw({from: owner});
-      assert.equal(canWidthrawAfter, true);
+      const canWithdrawAfter = await deposit.canWithdraw({from: owner});
+      assert.equal(canWithdrawAfter, true);
 
       const ownerBalanceBefore = await web3.eth.getBalance(owner);
-      await deposit.widthraw({from: owner});
+      await deposit.withdraw({from: owner});
       const balance = await web3.eth.getBalance(deposit.address);
       assert.equal(balance, 0);
       const ownerBalanceAfter = await web3.eth.getBalance(owner);
       assert.ok(ownerBalanceAfter > ownerBalanceBefore);
     });
 
-    describe("widthrawing based on price", async () => {
+    describe("withdrawing based on price", async () => {
       describe("required min price is met", async () => {
         beforeEach(async () => {
           await mockPrice(
@@ -174,9 +174,9 @@ contract("SmartHoldETH", async (accounts) => {
           );
         });
 
-        it("it widthraws funds", async () => {
-          const canWidthraw = await deposit.canWidthraw({from: owner});
-          assert.equal(canWidthraw, true);
+        it("it withdraws funds", async () => {
+          const canWithdraw = await deposit.canWithdraw({from: owner});
+          assert.equal(canWithdraw, true);
         });
       });
 
@@ -187,22 +187,22 @@ contract("SmartHoldETH", async (accounts) => {
           );
         });
 
-        it("it does not widthraw funds", async () => {
-          const canWidthraw = await deposit.canWidthraw({from: owner});
-          assert.equal(canWidthraw, false);
+        it("it does not withdraw funds", async () => {
+          const canWithdraw = await deposit.canWithdraw({from: owner});
+          assert.equal(canWithdraw, false);
         });
       });
 
-      describe("contract does not use price condition for widthrawal and time did not pass yet", async () => {
+      describe("contract does not use price condition for withdrawal and time did not pass yet", async () => {
         beforeEach(async () => {
           await mockPrice(
             { current: 100, minimum: 0 }
           );
         });
 
-        it("it does not widthraw funds", async () => {
-          const canWidthraw = await deposit.canWidthraw({from: owner});
-          assert.equal(canWidthraw, false);
+        it("it does not withdraw funds", async () => {
+          const canWithdraw = await deposit.canWithdraw({from: owner});
+          assert.equal(canWithdraw, false);
         });
       });
     });
