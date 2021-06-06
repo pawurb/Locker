@@ -12,7 +12,7 @@ The `SmartHoldETH` contract can be used to lock your Ether for a predefined peri
   SmartHoldETH.new(
     oracleAddress, // [address] Address of the price feed oracle contract (see below)
     lockForDays, // [uint] Number of days that you want to lock your funds for (max 4000)
-    minimumPrice, // [int] Minimum price (in USD) that would release the funds
+    minimumPrice, // [int] Minimum price (in USD) that would release the funds (setting it to 0 disables this condition)
   )
 ```
 
