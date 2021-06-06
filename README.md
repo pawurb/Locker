@@ -2,6 +2,8 @@
 
 **This is a BETA software which has not been audited for security. USE AT YOUR OWN RISK!**
 
+**Disclaimer: The information provided in readme is for educational purposes only and should not be treated as investment advice.**
+
 ## SmartHoldETH
 
 The `SmartHoldETH` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure a ETH/USD price value that will release the Ether. You need to initialize the contract with the following arguments:
