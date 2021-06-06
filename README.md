@@ -35,10 +35,19 @@ ETH/USD price oracles powered by [ChainLink](https://chain.link/):
 
 ## Setup
 
-```
+```bash
 asdf install
 npm install
 cp docker-compose.yml.sample docker-compose.yml
 docker compose up -d
 truffle test
+```
+
+### Security scan
+
+```bash
+docker pull trailofbits/eth-security-toolbox
+docker run -it -v ~/SmartHold-contracts/:/share trailofbits/eth-security-toolbox
+cd /share/SmartHold-contracts
+slither .
 ```

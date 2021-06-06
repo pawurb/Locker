@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0;
+pragma solidity 0.7.6;
 
 interface AggregatorV3Interface {
 
@@ -32,7 +32,7 @@ interface AggregatorV3Interface {
     );
 }
 
-pragma solidity 0.8.4;
+pragma solidity 0.7.6;
 
 contract SmartHoldETH {
   address public owner = msg.sender;
@@ -56,7 +56,7 @@ contract SmartHoldETH {
     priceFeed = AggregatorV3Interface(_priceFeed);
   }
 
-  function widthraw() public restricted {
+  function widthraw() external restricted {
     require(canWidthraw(), "Cannot widthraw yet!");
     payable(owner).transfer(address(this).balance);
   }

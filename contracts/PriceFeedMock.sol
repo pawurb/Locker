@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0;
+pragma solidity 0.7.6;
 
 interface AggregatorV3Interface {
 
@@ -33,7 +33,7 @@ interface AggregatorV3Interface {
 
 }
 
-pragma solidity 0.8.4;
+pragma solidity 0.7.6;
 
 contract PriceFeedMock is AggregatorV3Interface {
   int256 public mockedPrice;
