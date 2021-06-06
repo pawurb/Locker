@@ -20,7 +20,7 @@ API:
 
 `widthraw -> bool` - widthraw funds
 
-You can send more Ether to the contract after it has been initialized. Only owner of the account can widthraw the funds. Don't send ERC20 tokens to this contract because they will be lost forever.
+You can send more Ether to the contract after it has been initialized. Only maker of the contract can widthraw the funds. Don't send ERC20 tokens to this contract because they will be lost forever.
 
 ## SmartHoldERC20
 

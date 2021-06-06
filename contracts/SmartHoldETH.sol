@@ -30,7 +30,6 @@ interface AggregatorV3Interface {
       uint256 updatedAt,
       uint80 answeredInRound
     );
-
 }
 
 pragma solidity 0.8.4;

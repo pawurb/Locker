@@ -8,7 +8,6 @@ const advanceByDays = async (days) => {
   await timeMachine.advanceTimeAndBlock(days * 86400);
 };
 
-
 contract("SmartHoldETH", async (accounts) => {
   const owner = accounts[0];
   const notOwner = accounts[1];
