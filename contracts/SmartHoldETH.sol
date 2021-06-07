@@ -2,7 +2,20 @@
 
 pragma solidity 0.8.4;
 
-import "./PriceFeedInterface.sol";
+interface PriceFeedInterface {
+    function latestRoundData()
+        external
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        );
+}
+
+pragma solidity 0.8.4;
 
 contract SmartHoldETH {
     address public immutable owner;
