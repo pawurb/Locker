@@ -1,4 +1,4 @@
-# SmartHold Ethereum contracts  [![CircleCI](https://circleci.com/gh/pawurb/SmartHold-contracts.svg?style=svg)](https://circleci.com/gh/pawurb/SmartHold-contracts)
+# SmartHold - a simple way to lock and hold your Ethereum in a smart contract [![CircleCI](https://circleci.com/gh/pawurb/SmartHold-contracts.svg?style=svg)](https://circleci.com/gh/pawurb/SmartHold-contracts)
 
 **This is a BETA software which has not been audited for security. USE AT YOUR OWN RISK!**
 
