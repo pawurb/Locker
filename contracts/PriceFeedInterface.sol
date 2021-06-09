@@ -2,27 +2,15 @@
 
 pragma solidity 0.7.6;
 
-import "./PriceFeedInterface.sol";
-
-contract BuggyPriceFeedMock is PriceFeedInterface {
+interface PriceFeedInterface {
   function latestRoundData()
     external
     view
-    override
     returns (
       uint80 roundId,
       int256 answer,
       uint256 startedAt,
       uint256 updatedAt,
       uint80 answeredInRound
-    ) {
-    revert("Random bug!");
-    return (
-      123,
-      123,
-      123,
-      123,
-      123
     );
-  }
 }
