@@ -4,6 +4,8 @@
 
 **Disclaimer: The information provided in readme is for educational purposes only and should not be treated as investment advice.**
 
+[Story of the project](https://pawelurbanek.com/smart-contract-development)
+
 ## SmartHoldETH
 
 The `SmartHoldETH` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure a ETH/USD price value that will release the Ether. You need to initialize the contract with the following arguments:
