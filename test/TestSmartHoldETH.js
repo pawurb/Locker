@@ -1,6 +1,10 @@
 const Web3 = require("web3");
 const timeMachine = require('ganache-time-traveler');
 
+const {
+  expectRevert
+} = require('@openzeppelin/test-helpers');
+
 const SmartHoldETH = artifacts.require("SmartHoldETH");
 const PriceFeedMock = artifacts.require("PriceFeedMock");
 const BuggyPriceFeedMock = artifacts.require("BuggyPriceFeedMock");
@@ -39,37 +43,23 @@ contract("SmartHoldETH", async (accounts) => {
 
   describe("'constructor'", async () => {
     it("does not allow locking funds for too long", async () => {
-      let notExpected = false;
-
-      try {
-        await SmartHoldETH.new(
+      await expectRevert(
+        SmartHoldETH.new(
           priceFeed.address,
           4050,
           0
         )
-        notExpected = true;
-      } catch (err) {
-        assert.ok(err);
-      }
-
-      assert.ok(!notExpected)
+      , "Too long")
     });
 
     it("does not accept negative minimum price", async () => {
-      let notExpected = false;
-
-      try {
-        await SmartHoldETH.new(
+      await expectRevert(
+        SmartHoldETH.new(
           priceFeed.address,
           50,
           -20
         )
-        notExpected = true;
-      } catch (err) {
-        assert.ok(err);
-      }
-
-      assert.ok(!notExpected)
+      , "Minimum price")
     });
 
     it("deposit gets deployed to test network and accepts initial ETH transfer", async () => {
@@ -119,30 +109,17 @@ contract("SmartHoldETH", async (accounts) => {
     });
 
     it("can only be called by the deposit contract owner", async () => {
-      let notExpected = false;
-
-      try {
-        await deposit.withdraw({from: notOwner});
-        notExpected = true;
-      } catch (err) {
-        assert.ok(err);
-      }
-
-      assert.ok(!notExpected)
+      await expectRevert(
+        deposit.withdraw({from: notOwner})
+      , "Access denied")
     });
 
     it("required time did not pass yet, it does not withdraw funds", async () => {
-      let notExpected = false;
       const ownerBalanceBefore = await web3.eth.getBalance(owner);
 
-      try {
-        await deposit.withdraw({from: owner});
-        notExpected = true;
-      } catch (err) {
-        assert.ok(err);
-      }
-
-      assert.ok(!notExpected)
+      await expectRevert(
+        deposit.withdraw({from: owner})
+      , "Cannot withdraw")
 
       const balance = await web3.eth.getBalance(deposit.address);
       assert.equal(balance, value);
@@ -223,16 +200,9 @@ contract("SmartHoldETH", async (accounts) => {
         });
 
         it("crashes", async () => {
-          let notExpected = false;
-
-          try {
-            await deposit.canWithdraw({from: owner});
-            notExpected = true;
-          } catch (err) {
-            assert.ok(err);
-          }
-
-          assert.ok(!notExpected)
+          await expectRevert(
+            deposit.canWithdraw({from: owner})
+          , "bug")
         });
       });
 
