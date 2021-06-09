@@ -47,12 +47,16 @@ contract SmartHoldETH {
     bool timeCondition = (depositedAt + (lockForDays * 86400)) < block.timestamp;
     bool priceCondition = false;
 
+    if(timeCondition) {
+      return true;
+    }
+
     if(minimumPrice == 0) {
       priceCondition = false;
     } else {
       priceCondition = (getPrice() >= minimumPrice);
     }
-    return timeCondition || priceCondition;
+    return priceCondition;
   }
 
   receive() external payable {}

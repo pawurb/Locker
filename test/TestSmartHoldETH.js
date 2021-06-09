@@ -3,6 +3,7 @@ const timeMachine = require('ganache-time-traveler');
 
 const SmartHoldETH = artifacts.require("SmartHoldETH");
 const PriceFeedMock = artifacts.require("PriceFeedMock");
+const BuggyPriceFeedMock = artifacts.require("BuggyPriceFeedMock");
 
 const advanceByDays = async (days) => {
   await timeMachine.advanceTimeAndBlock(days * 86400);
@@ -203,6 +204,57 @@ contract("SmartHoldETH", async (accounts) => {
         it("it does not withdraw funds", async () => {
           const canWithdraw = await deposit.canWithdraw({from: owner});
           assert.equal(canWithdraw, false);
+        });
+      });
+
+      describe("price feed execution returns error and required time has not yet passed", async () => {
+        beforeEach(async () => {
+          priceFeed = await BuggyPriceFeedMock.new()
+
+          deposit = await SmartHoldETH.new(
+            priceFeed.address,
+            lockForDays,
+            100,
+            {
+              value: value,
+              from: owner
+            }
+          )
+        });
+
+        it("crashes", async () => {
+          let notExpected = false;
+
+          try {
+            await deposit.canWithdraw({from: owner});
+            notExpected = true;
+          } catch (err) {
+            assert.ok(err);
+          }
+
+          assert.ok(!notExpected)
+        });
+      });
+
+      describe("price feed execution returns error and required time has already passed", async () => {
+        beforeEach(async () => {
+          priceFeed = await BuggyPriceFeedMock.new()
+
+          deposit = await SmartHoldETH.new(
+            priceFeed.address,
+            lockForDays,
+            100,
+            {
+              value: value,
+              from: owner
+            }
+          )
+        });
+
+        it("it withdraws funds", async () => {
+          await advanceByDays(lockForDays + 1);
+          const canWithdraw = await deposit.canWithdraw({from: owner});
+          assert.equal(canWithdraw, true);
         });
       });
     });
