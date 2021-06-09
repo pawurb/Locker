@@ -30,7 +30,7 @@ You can send more Ether to the contract after it has been initialized. Only make
 
 ## Dependencies
 
-ETH/USD price oracles powered by [ChainLink](https://chain.link/):
+ETH/USD price oracles powered by [ChainLink](https://docs.chain.link/docs/get-the-latest-price/):
 
 * [Mainnet](https://etherscan.io/address/0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419)
 * [Kovan](https://kovan.etherscan.io/address/0x9326BFA02ADD2366b30bacB125260Af641031331#code)

@@ -32,7 +32,7 @@ contract SmartHoldETH {
   }
 
   function canWithdraw() public view restricted returns (bool) {
-    bool timeCondition = (depositedAt + (lockForDays * 86400)) < block.timestamp;
+    bool timeCondition = (depositedAt + (lockForDays * 1 days)) < block.timestamp;
     bool priceCondition = false;
 
     if(timeCondition) {
@@ -52,6 +52,6 @@ contract SmartHoldETH {
   function getPrice() public view returns (int) {
     (, int price,,,) = priceFeed.latestRoundData();
 
-    return price / 100000000;
+    return price / 10e7;
   }
 }
