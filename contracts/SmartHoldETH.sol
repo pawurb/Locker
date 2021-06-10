@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.4;
 
 import "./PriceFeedInterface.sol";
 
 contract SmartHoldETH {
-  address public owner = msg.sender;
-  uint public depositedAt = block.timestamp;
-  uint public lockForDays;
-  int public minimumPrice;
+  address immutable public owner;
+  uint immutable public depositedAt;
+  uint immutable public lockForDays;
+  int immutable public minimumPrice;
   PriceFeedInterface internal priceFeed;
 
   modifier restricted() {
