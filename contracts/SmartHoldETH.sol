@@ -11,11 +11,6 @@ contract SmartHoldETH {
     int256 public immutable minimumPrice;
     PriceFeedInterface internal priceFeed;
 
-    modifier restricted() {
-        require(msg.sender == owner, "Access denied!");
-        _;
-    }
-
     constructor(
         address _priceFeed,
         uint256 _lockForDays,
@@ -30,26 +25,18 @@ contract SmartHoldETH {
         priceFeed = PriceFeedInterface(_priceFeed);
     }
 
-    function withdraw() external restricted {
+    function withdraw() external {
+        require(msg.sender == owner, "Access denied!");
         require(canWithdraw(), "Cannot withdraw yet!");
         payable(owner).transfer(address(this).balance);
     }
 
-    function canWithdraw() public view restricted returns (bool) {
-        bool timeCondition =
-            (depositedAt + (lockForDays * 1 days)) < block.timestamp;
-        bool priceCondition = false;
-
-        if (timeCondition) {
+    function canWithdraw() public view returns (bool) {
+        if ((depositedAt + (lockForDays * 1 days)) < block.timestamp) {
             return true;
-        }
-
-        if (minimumPrice == 0) {
-            priceCondition = false;
-        } else {
-            priceCondition = (getPrice() >= minimumPrice);
-        }
-        return priceCondition;
+        } else if (minimumPrice != 0) {
+            return (getPrice() >= minimumPrice);
+        } else return false;
     }
 
     receive() external payable {}
