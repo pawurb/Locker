@@ -9,7 +9,8 @@
   "scripts": {
     "test": "mocha --timeout 10000 --exit --recursive",
     "compile": "truffle compile",
-    "lint": "solhint 'contracts/*.sol'"
+    "lint": "solhint 'contracts/*.sol'",
+    "pretty": "npx prettier --write 'contracts/*.sol'"
   },
   "repository": {
     "type": "git",
@@ -22,10 +23,13 @@
   },
   "homepage": "https://github.com/pawurb/SmartHold-contracts#readme",
   "devDependencies": {
+    "@openzeppelin/contracts": "^4.1.0",
     "@openzeppelin/test-environment": "^0.1.9",
     "@openzeppelin/test-helpers": "^0.5.11",
     "chai": "^4.3.4",
     "mocha": "^8.4.0",
+    "prettier": "^2.3.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.13",
     "solhint": "^3.3.6",
     "truffle": "^5.3.9"
   }

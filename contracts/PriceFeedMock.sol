@@ -5,29 +5,24 @@ pragma solidity 0.8.4;
 import "./PriceFeedInterface.sol";
 
 contract PriceFeedMock is PriceFeedInterface {
-  int256 public mockedPrice;
+    int256 public mockedPrice;
 
-  constructor(int256 _mockedPrice) {
-    mockedPrice = _mockedPrice;
-  }
+    constructor(int256 _mockedPrice) {
+        mockedPrice = _mockedPrice;
+    }
 
-  function latestRoundData()
-    external
-    view
-    override
-    returns (
-      uint80 roundId,
-      int256 answer,
-      uint256 startedAt,
-      uint256 updatedAt,
-      uint80 answeredInRound
-    ) {
-    return (
-      123,
-      mockedPrice,
-      123,
-      123,
-      123
-    );
-  }
+    function latestRoundData()
+        external
+        view
+        override
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        )
+    {
+        return (123, mockedPrice, 123, 123, 123);
+    }
 }
