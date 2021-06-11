@@ -1,13 +1,13 @@
 const Web3Utils = require('web3-utils');
 const { accounts, contract } = require('@openzeppelin/test-environment');
 const {
-    BN,           // Big Number support
+    BN,
     time,
     balance,
-    constants,    // Common constants, like the zero address and largest integers
-    expectEvent,  // Assertions for emitted events
+    constants,
+    expectEvent,
     expectRevert,
-    send, // Assertions for transactions that should fail
+    send,
 } = require('@openzeppelin/test-helpers');
 const { assert, expect } = require('chai');
 
@@ -22,7 +22,7 @@ const advanceByDays = async (days) => {
 describe("SmartHoldETH",  () => {
   let [owner, notOwner] = accounts;
 
-  const value = new BN(Web3Utils.toWei("0.01", "ether"));
+  const value = Web3Utils.toWei("0.01", "ether");
   let lockForDays = 5;
   let deposit;
   let priceFeed;
@@ -72,7 +72,7 @@ describe("SmartHoldETH",  () => {
       assert.ok(deposit.address);
 
       const bal = await balance.current(deposit.address);
-      assert.equal(String(bal), String(value));
+      assert.equal(bal, value);
     });
 
     it("sets the correct owner and other attributes", async () => {

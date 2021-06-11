@@ -25,6 +25,7 @@
     "@openzeppelin/test-helpers": "^0.5.11",
     "chai": "^4.3.4",
     "mocha": "^8.4.0",
+    "solhint": "^3.3.6",
     "truffle": "^5.3.9"
   }
 }
