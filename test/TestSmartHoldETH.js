@@ -1,22 +1,29 @@
-const Web3 = require("web3");
-const timeMachine = require('ganache-time-traveler');
-
+const Web3Utils = require('web3-utils');
+const { accounts, contract } = require('@openzeppelin/test-environment');
 const {
-  expectRevert
+    BN,           // Big Number support
+    time,
+    balance,
+    constants,    // Common constants, like the zero address and largest integers
+    expectEvent,  // Assertions for emitted events
+    expectRevert,
+    send, // Assertions for transactions that should fail
 } = require('@openzeppelin/test-helpers');
+const { assert, expect } = require('chai');
 
-const SmartHoldETH = artifacts.require("SmartHoldETH");
-const PriceFeedMock = artifacts.require("PriceFeedMock");
-const BuggyPriceFeedMock = artifacts.require("BuggyPriceFeedMock");
+const SmartHoldETH = contract.fromArtifact("SmartHoldETH");
+const PriceFeedMock = contract.fromArtifact("PriceFeedMock");
+const BuggyPriceFeedMock = contract.fromArtifact("BuggyPriceFeedMock");
 
 const advanceByDays = async (days) => {
-  await timeMachine.advanceTimeAndBlock(days * 86400);
+  await time.increase(days * 86400);
 };
 
-contract("SmartHoldETH", async (accounts) => {
-  const owner = accounts[0];
-  const notOwner = accounts[1];
-  const value = Web3.utils.toWei("0.01", "ether");
+describe("SmartHoldETH",  () => {
+
+  let [owner, notOwner] = accounts;
+
+  const value = new BN(Web3Utils.toWei("0.01", "ether"));
   let lockForDays = 5;
   let deposit;
   let priceFeed;
@@ -65,8 +72,8 @@ contract("SmartHoldETH", async (accounts) => {
     it("deposit gets deployed to test network and accepts initial ETH transfer", async () => {
       assert.ok(deposit.address);
 
-      const balance = await web3.eth.getBalance(deposit.address);
-      assert.equal(balance, value);
+      const bal = await balance.current(deposit.address);
+      assert.equal(String(bal), String(value));
     });
 
     it("sets the correct owner and other attributes", async () => {
@@ -87,26 +94,17 @@ contract("SmartHoldETH", async (accounts) => {
     });
 
     it("accepts more ETH transfer after deployment", async () => {
-      await web3.eth.sendTransaction({
-        from: accounts[0],
-        to: deposit.address,
+      await deposit.sendTransaction({
+        from: owner,
         value: value
       });
 
-      const balance = await web3.eth.getBalance(deposit.address);
-      assert.equal(balance, value * 2);
+      const bal = await balance.current(deposit.address);
+      assert.equal(bal, value * 2);
     });
   });
 
   describe("'withdraw'", async () => {
-    beforeEach(async() => {
-      let snapshot = await timeMachine.takeSnapshot();
-      snapshotId = snapshot['result'];
-    });
-
-    afterEach(async() => {
-      await timeMachine.revertToSnapshot(snapshotId);
-    });
 
     it("can only be called by the deposit contract owner", async () => {
       await expectRevert(
@@ -115,16 +113,16 @@ contract("SmartHoldETH", async (accounts) => {
     });
 
     it("required time did not pass yet, it does not withdraw funds", async () => {
-      const ownerBalanceBefore = await web3.eth.getBalance(owner);
+      const ownerBalanceBefore = await balance.current(owner);
 
       await expectRevert(
         deposit.withdraw({from: owner})
       , "Cannot withdraw")
 
-      const balance = await web3.eth.getBalance(deposit.address);
-      assert.equal(balance, value);
+      const bal = await balance.current(deposit.address);
+      assert.equal(String(bal), String(value));
 
-      const ownerBalanceAfter = await web3.eth.getBalance(owner);
+      const ownerBalanceAfter = await balance.current(owner);
       assert.ok(ownerBalanceAfter < ownerBalanceBefore);
     });
 
@@ -136,11 +134,11 @@ contract("SmartHoldETH", async (accounts) => {
       const canWithdrawAfter = await deposit.canWithdraw({from: owner});
       assert.equal(canWithdrawAfter, true);
 
-      const ownerBalanceBefore = await web3.eth.getBalance(owner);
+      const ownerBalanceBefore = await balance.current(owner);
       await deposit.withdraw({from: owner});
-      const balance = await web3.eth.getBalance(deposit.address);
-      assert.equal(balance, 0);
-      const ownerBalanceAfter = await web3.eth.getBalance(owner);
+      const bal = await balance.current(deposit.address);
+      assert.equal(bal, 0);
+      const ownerBalanceAfter = await balance.current(owner);
       assert.ok(ownerBalanceAfter > ownerBalanceBefore);
     });
 
