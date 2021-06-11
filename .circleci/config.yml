@@ -8,6 +8,7 @@ jobs:
     steps:
       - checkout
       - run: npm i
+      - run: npm run compile
       - run: npm run test
 workflows:
   version: 2

@@ -20,7 +20,6 @@ const advanceByDays = async (days) => {
 };
 
 describe("SmartHoldETH",  () => {
-
   let [owner, notOwner] = accounts;
 
   const value = new BN(Web3Utils.toWei("0.01", "ether"));
