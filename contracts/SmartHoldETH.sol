@@ -17,7 +17,7 @@ contract SmartHoldETH {
         int256 _minimumPrice
     ) payable {
         require(_lockForDays < 4000, "Too long lockup period!");
-        require(_minimumPrice >= 0, "Minimum price must not be negative!");
+        require(_minimumPrice >= 0, "Price must not be negative!");
         owner = msg.sender;
         lockForDays = _lockForDays;
         minimumPrice = _minimumPrice;

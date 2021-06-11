@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test": "mocha --timeout 10000 --exit --recursive",
-    "compile": "truffle compile"
+    "compile": "truffle compile",
+    "lint": "solhint 'contracts/*.sol'"
   },
   "repository": {
     "type": "git",
