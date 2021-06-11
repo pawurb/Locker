@@ -65,7 +65,7 @@ describe("SmartHoldETH",  () => {
           50,
           -20
         )
-      , "Minimum price")
+      , "Price must not")
     });
 
     it("deposit gets deployed to test network and accepts initial ETH transfer", async () => {
