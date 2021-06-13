@@ -103,8 +103,6 @@ Please be aware that ChainLink price feeds are not guaranteed always to return t
 ```bash
 asdf install
 npm install
-cp docker-compose.yml.sample docker-compose.yml
-docker compose up -d
 npm run lint
 npm run test
 ```

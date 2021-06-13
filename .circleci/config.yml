@@ -3,7 +3,6 @@ jobs:
   test:
     docker:
       - image: circleci/node:12.22.1
-      - image: pawurb/ganache:latest
     parallelism: 1
     steps:
       - checkout
