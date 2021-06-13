@@ -1,14 +1,14 @@
 # SmartHold - a simple way to lock and hold your Ethereum in a smart contract [![CircleCI](https://circleci.com/gh/pawurb/SmartHold-contracts.svg?style=svg)](https://circleci.com/gh/pawurb/SmartHold-contracts)
 
-**This is a BETA software which has not been audited for security. USE AT YOUR OWN RISK!**
+**This is a BETA software that has not been audited for security. USE AT YOUR OWN RISK!**
 
-**Disclaimer: The information provided in readme is for educational purposes only and should not be treated as investment advice.**
+**Disclaimer: The information provided in the readme is for educational purposes only and should not be treated as investment advice.**
 
 [Story of the project](https://pawelurbanek.com/smart-contract-development)
 
 ## SmartHoldETH
 
-The `SmartHoldETH` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure a ETH/USD price value that will release the Ether. You need to initialize the contract with the following arguments:
+The `SmartHoldETH` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure an ETH/USD price value that will release the Ether. You need to initialize the contract with the following arguments:
 
 ```node
 const deposit = await SmartHoldETH.new(
@@ -55,9 +55,9 @@ await deposit.configureToken(
 * `_tokenSymbol` - `[string]` symbol of a token, i.e. 'BAT' or 'ETH'
 * `_tokenAddress` - `[address]` address of an ERC20 token, i.e. [`BAT`](https://etherscan.io/token/0x0d8775f648430679a709e98d2b0cb6250d2887ef) or [`ETH`](https://etherscan.io/token/0x0000000000000000000000000000000000000000)
 * `_lockForDays` - `[uint256]` how many days you want to lock the token for, counted since contract creation
-* `_priceFeedAddress` - `[address]` address of a ChainLink price feed contract, e.g., [ETH/USD on Mainnet](https://etherscan.io/address/0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419). Provide a [zero address](https://etherscan.io/address/0x0000000000000000000000000000000000000000) if you don't want to withdraw based on price conditions.
+* `_priceFeedAddress` - `[address]` address of a ChainLink price feed contract, e.g., [ETH/USD on Mainnet](https://etherscan.io/address/0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419). Provide a [zero address](https://etherscan.io/address/0x0000000000000000000000000000000000000000) if you don't want to withdraw based on price conditions
 * `_minExpectedPrice` - `[int256]` minimum price (in units corresponding to configured `_pricePrecision`) that would release the funds (setting it to 0 disables this condition)
-* `_pricePrecision` - `[int256]` precision of price returned by a price feed, i.e. `10e7` for dollars and `10e5` for cents
+* `_pricePrecision` - `[int256]` inversed precision of price returned by a price feed, i.e. `10e7` for dollars and `10e5` for cents
 
 Before configuring the token you can validate the price feed address and precision using the following method:
 
@@ -65,7 +65,7 @@ Before configuring the token you can validate the price feed address and precisi
 * `_feedAddress` -`[address]` address of a ChainLink price feed oracle
 * `_precision` - `[int256] precision of returned price values, e.g., `10e7` for dollars and `10e5` for cents
 
-You can only configure each token once. After it is configured you can increase the expected minimum price, and lock for days duration. Using the following methods:
+You can only configure each token once. After it is configured, you can increase the expected minimum price and lock for days duration. Using the following methods:
 
 `increaseMinExpectedPrice(string memory _symbol, int256 _newMinExpectedPrice)`
 * `_symbol` - `[string]` symbol of a token
@@ -80,7 +80,7 @@ You can check if a given token can be withdrawn by using:
 `canWithdraw(string memory _symbol) returns (bool)`
 * `_symbol` - `[string]` symbol of a token
 
-If the above method returns `true` you can withdrawn a selected token using:
+If the above method returns `true`, you can withdraw a selected token using:
 
 `withdraw(string memory _symbol)`
 * `_symbol` - `[string]` symbol of a token
@@ -96,7 +96,7 @@ ETH/USD price oracles powered by [ChainLink](https://docs.chain.link/docs/get-th
 
 [More price feeds](https://data.chain.link/).
 
-Please be aware that ChainLink price feeds are not guaranteed to always return the correct data. In case they stop responding you'll only be able to withdraw your funds once the lock period has expired.
+Please be aware that ChainLink price feeds are not guaranteed always to return the correct data. In case they stop responding, you'll only be able to withdraw your funds once the lock period has expired.
 
 ## Setup
 
@@ -105,7 +105,7 @@ asdf install
 npm install
 cp docker-compose.yml.sample docker-compose.yml
 docker compose up -d
-npm run link
+npm run lint
 npm run test
 ```
 
