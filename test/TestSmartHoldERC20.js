@@ -78,121 +78,118 @@ describe("SmartHoldERC20", async () => {
 
   describe("'configureToken'", async () => {
     it("adds token data", async () => {
-      await deposit.configureToken("MTA", tokenA.address, 20, priceFeed.address, 150, 10e7)
-      const lockTimeA = await deposit.lockForDaysDurations("MTA")
-      const tokenAddressA = await deposit.tokenAddresses("MTA")
+      await deposit.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
+      const lockTimeA = await deposit.getLockForDaysDuration(tokenA.address)
+      const tokenAddressA = await deposit.tokenAddresses(0)
       assert.equal(tokenAddressA, tokenA.address)
-      const pricePrecision = await deposit.pricePrecisions("MTA")
+      const pricePrecision = await deposit.getPricePrecision(tokenA.address)
       assert.equal(pricePrecision, 10e7)
 
-      const token = await deposit.tokens(0)
-      assert.equal(token, "MTA")
-      const count = await deposit.getConfiguredTokensCount()
+      const count = (await deposit.getConfiguredTokens()).length
       assert.equal(count, 1)
 
-      const lockTimeB = await deposit.lockForDaysDurations("MTB")
-      assert.equal(lockTimeB, 0)
+      await expectRevert(
+        deposit.getLockForDaysDuration(tokenETH.address)
+      , "not configured")
     })
 
     it("does not allow adding token more than once", async () => {
-      await deposit.configureToken("MTA", tokenA.address, 20, priceFeed.address, 150, 10e7)
+      await deposit.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
 
       await expectRevert(
-        deposit.configureToken("MTA", tokenA.address, 20, priceFeed.address, 150, 10e7)
+        deposit.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
       , "already configured")
     })
 
     it("raises an error for invalid price feed addresses", async () => {
       await expectRevert(
-        deposit.configureToken("MTA", tokenA.address, 20, tokenA.address, 150, 10e7)
+        deposit.configureToken(tokenA.address, 20, tokenA.address, 150, 10e7)
       , "revert")
 
     })
 
     it("enables 'getPrice' for a given token and saves minimumExpectedPrice", async () => {
-      await deposit.configureToken("MTA", tokenA.address, 20, priceFeed.address, 150, 10e7)
-      const expectedPriceA = await deposit.minExpectedPrices("MTA")
+      await deposit.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
+      const expectedPriceA = await deposit.getMinExpectedPrice(tokenA.address)
       assert.equal(expectedPriceA, 150)
 
-      const expectedPriceB = await deposit.minExpectedPrices("MTB")
-      assert.equal(expectedPriceB, 0)
-
-      const currentPriceA = await deposit.getPrice("MTA")
+      const currentPriceA = await deposit.getPrice(tokenA.address)
       assert.equal(currentPriceA, 100)
 
-      const currentPriceB = await deposit.getPrice("MTB")
-      assert.equal(currentPriceB, 0)
+      await expectRevert(
+        deposit.getPrice(tokenETH.address)
+      , "not configured")
     })
 
     it("checks that ignoring the minimum price is correctly configured", async () => {
       await expectRevert(
-        deposit.configureToken("MTA", tokenA.address, 20, priceFeed.address, 0, 10e7)
+        deposit.configureToken(tokenA.address, 20, priceFeed.address, 0, 10e7)
       , "Invalid")
     })
 
     it("does not allow setting negative expected price", async () => {
       await expectRevert(
-        deposit.configureToken("MTA", tokenA.address, 20, priceFeed.address, -10, 10e7)
+        deposit.configureToken(tokenA.address, 20, priceFeed.address, -10, 10e7)
       , "Invalid")
     })
   })
 
   describe("'increaseMinExpectedPrice'", async () => {
     beforeEach(async() => {
-      await deposit.configureToken("MTA", tokenA.address, 20, priceFeed.address, 150, 10e7)
+      await deposit.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
     })
 
     it("cannot be executed by non owner account", async () => {
       await expectRevert(
-        deposit.increaseMinExpectedPrice("MTA", 50, {from: notOwner})
+        deposit.increaseMinExpectedPrice(tokenA.address, 50, {from: notOwner})
       , "Access denied")
     })
 
     it("raises an error for not configured tokens", async () => {
       await expectRevert(
-        deposit.increaseMinExpectedPrice("MTB", 25)
-      , "not yet configured")
+        deposit.increaseMinExpectedPrice(tokenETH.address, 25)
+      , "not configured")
     })
 
     it("does not allow decreasing the expected price", async () => {
       await expectRevert(
-        deposit.increaseMinExpectedPrice("MTA", 120)
+        deposit.increaseMinExpectedPrice(tokenA.address, 120)
       , "invalid")
     })
 
     it("allows increasing the min expected price", async () => {
-      await deposit.increaseMinExpectedPrice("MTA", 170)
-      const newPrice = await deposit.minExpectedPrices("MTA")
+      await deposit.increaseMinExpectedPrice(tokenA.address, 170)
+      const newPrice = await deposit.getMinExpectedPrice(tokenA.address)
       assert.equal(newPrice, 170)
     })
   })
 
   describe("'increaseLockForDays'", async () => {
     beforeEach(async() => {
-      await deposit.configureToken("MTA", tokenA.address, 20, priceFeed.address, 150, 10e7)
+      await deposit.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
     })
 
     it("cannot be executed by non owner account", async () => {
       await expectRevert(
-        deposit.increaseLockForDays("MTA", 25, {from: notOwner})
+        deposit.increaseLockForDays(tokenA.address, 25, {from: notOwner})
       , "Access denied")
     })
 
     it("raises an error for not configured tokens", async () => {
       await expectRevert(
-        deposit.increaseLockForDays("MTB", 25)
-      , "not yet configured")
+        deposit.increaseLockForDays(tokenETH.address, 25)
+      , "not configured")
     })
 
     it("does not allow decreasing the lock duration", async () => {
       await expectRevert(
-        deposit.increaseLockForDays("MTA", 15)
+        deposit.increaseLockForDays(tokenA.address, 15)
       , "invalid")
     })
 
     it("allows increasing the lock duration", async () => {
-      await deposit.increaseLockForDays("MTA", 25)
-      const newPrice = await deposit.lockForDaysDurations("MTA")
+      await deposit.increaseLockForDays(tokenA.address, 25)
+      const newPrice = await deposit.getLockForDaysDuration(tokenA.address)
       assert.equal(newPrice, 25)
     })
   })
@@ -217,18 +214,18 @@ describe("SmartHoldERC20", async () => {
   describe("'canWithdraw'", async () => {
     it("token was not configured it raises an error", async () => {
       await expectRevert(
-        deposit.canWithdraw("MTA")
-      , "not yet configured")
+        deposit.canWithdraw(tokenA.address)
+      , "not configured")
 
-      await deposit.configureToken("MTA", tokenA.address, 20, priceFeed.address, 150, 10e7)
-      const result = await deposit.canWithdraw("MTA")
+      await deposit.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
+      const result = await deposit.canWithdraw(tokenA.address)
       assert.equal(result, false)
     })
 
     it("time for holding the token has passed it returns true", async () => {
-      await deposit.configureToken("MTA", tokenA.address, 20, priceFeed.address, 150, 10e7)
+      await deposit.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
       advanceByDays(21)
-      const result = await deposit.canWithdraw("MTA")
+      const result = await deposit.canWithdraw(tokenA.address)
       assert.equal(result, true)
     })
 
@@ -238,39 +235,51 @@ describe("SmartHoldERC20", async () => {
       })
 
       it("minimumExpectedPrice has been configured and is lower than the current price it returns true", async () => {
-        await deposit.configureToken("MTA", tokenA.address, 20, priceFeed.address, 150, 10e7)
-        const result = await deposit.canWithdraw("MTA")
+        await deposit.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
+        const result = await deposit.canWithdraw(tokenA.address)
         assert.equal(result, true)
       })
 
       it("minimumExpectedPrice has been configured and is higher than the current price it returns false", async () => {
-        await deposit.configureToken("MTA", tokenA.address, 20, priceFeed.address, 210, 10e7)
-        const result = await deposit.canWithdraw("MTA")
+        await deposit.configureToken(tokenA.address, 20, priceFeed.address, 210, 10e7)
+        const result = await deposit.canWithdraw(tokenA.address)
         assert.equal(result, false)
       })
 
       it("minimumExpectedPrice has not been configured it returns false", async () => {
-        await deposit.configureToken("MTA", tokenA.address, 20, constants.ZERO_ADDRESS, 0, 10e7)
-        const result = await deposit.canWithdraw("MTA")
+        await deposit.configureToken(tokenA.address, 20, constants.ZERO_ADDRESS, 0, 10e7)
+        const result = await deposit.canWithdraw(tokenA.address)
         assert.equal(result, false)
       })
     })
   })
 
+  describe("'getConfiguredTokens'", async () => {
+    it("returns array of token addresses", async () => {
+      await deposit.configureToken(tokenA.address, 20, priceFeed.address, 120, 10e7)
+      await deposit.configureToken(tokenETH.address, 20, constants.ZERO_ADDRESS, 0, 10e7)
+
+      const tokens = await deposit.getConfiguredTokens()
+      assert.equal(tokens[0], tokenA.address)
+      assert.equal(tokens[1], tokenETH.address)
+      assert.equal(tokens.length, 2)
+    })
+  })
+
   describe("'withdraw'", async () => {
     beforeEach(async() => {
-      await deposit.configureToken("MTA", tokenA.address, 20, priceFeed.address, 150, 10e7)
+      await deposit.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
     })
 
     it("cannot be executed by non owner account", async () => {
       await expectRevert(
-        deposit.withdraw("MTA", {from: notOwner})
+        deposit.withdraw(tokenA.address, {from: notOwner})
       , "Access denied")
     })
 
     it("raises an error if conditions are not fulfilled", async () => {
       await expectRevert(
-        deposit.withdraw("MTA")
+        deposit.withdraw(tokenA.address)
       , "cannot withdraw")
     })
 
@@ -281,19 +290,19 @@ describe("SmartHoldERC20", async () => {
 
       advanceByDays(21)
 
-      await deposit.withdraw("MTA")
+      await deposit.withdraw(tokenA.address)
       const balanceAfter = await tokenA.balanceOf(owner)
 
       assert.equal(balanceAfter, 500)
     })
 
     it("sends ETH tokens to owner account if conditions are fulfilled", async () => {
-      await deposit.configureToken("ETH", tokenETH.address, 20, priceFeed.address, 150, 10e7)
+      await deposit.configureToken(constants.ZERO_ADDRESS, 20, priceFeed.address, 150, 10e7)
       await send.ether(notOwner, deposit.address, ether('1'))
       const balanceBefore = await balance.current(owner)
 
       advanceByDays(21)
-      await deposit.withdraw("ETH")
+      await deposit.withdraw(constants.ZERO_ADDRESS)
 
       const balanceAfter = await balance.current(owner)
       assert.ok(balanceAfter > balanceBefore)

@@ -50,12 +50,20 @@ pragma solidity 0.8.4;
 contract SmartHoldERC20 {
     address public immutable owner = msg.sender;
     uint256 public immutable createdAt = block.timestamp;
-    mapping(string => uint256) public lockForDaysDurations;
-    mapping(string => int256) public minExpectedPrices;
-    mapping(string => int256) public pricePrecisions;
-    mapping(string => address) public priceFeeds;
-    mapping(string => address) public tokenAddresses;
-    string[] public tokens;
+    mapping(address => bool) public configuredTokens;
+    mapping(address => Token) public tokensData;
+    address[] public tokenAddresses;
+
+    struct Token {
+        uint256 lockForDays;
+        int256 minExpectedPrice;
+        int256 pricePrecision;
+        address priceFeed;
+    }
+
+    address private constant ZERO = address(0x0);
+    string private constant ERRBADCONFIG = "Invalid price configuration";
+    string private constant ERRNOTCONFIGURED = "Token not configured";
 
     modifier restricted() {
         require(msg.sender == owner, "Access denied!");
@@ -63,97 +71,93 @@ contract SmartHoldERC20 {
     }
 
     function configureToken(
-        string memory _symbol,
         address _tokenAddress,
         uint256 _lockForDays,
-        address _feedAddress,
+        address _priceFeed,
         int256 _minExpectedPrice,
         int256 _pricePrecision
     ) external restricted {
         require(_lockForDays > 0, "Invalid lockForDays value.");
         require(_minExpectedPrice >= 0, "Invalid minExpectedPrice value.");
-        require(
-            lockForDaysDurations[_symbol] == 0,
-            "Token already configured!"
-        );
+        require(!configuredTokens[_tokenAddress], "Token already configured!");
 
-        if (
-            (_feedAddress == address(0) && _minExpectedPrice != 0) ||
-            (_minExpectedPrice == 0 && _feedAddress != address(0))
-        ) {
-            require(false, "Invalid price configuration!");
-        }
-
-        if (_feedAddress != address(0)) {
+        if (_minExpectedPrice == 0) {
+            require(_priceFeed == ZERO, ERRBADCONFIG);
+        } else {
+            require(_priceFeed != ZERO, ERRBADCONFIG);
             // check feed address interface
-            PriceFeedInterface(_feedAddress).latestRoundData();
+            PriceFeedInterface(_priceFeed).latestRoundData();
         }
 
-        tokens.push(_symbol);
-        lockForDaysDurations[_symbol] = _lockForDays;
-        tokenAddresses[_symbol] = _tokenAddress;
-        priceFeeds[_symbol] = _feedAddress;
-        minExpectedPrices[_symbol] = _minExpectedPrice;
-        pricePrecisions[_symbol] = _pricePrecision;
+        tokenAddresses.push(_tokenAddress);
+
+        Token memory newToken = Token({
+            lockForDays: _lockForDays,
+            minExpectedPrice: _minExpectedPrice,
+            pricePrecision: _pricePrecision,
+            priceFeed: _priceFeed
+        });
+
+        tokensData[_tokenAddress] = newToken;
+        configuredTokens[_tokenAddress] = true;
     }
 
     function increaseMinExpectedPrice(
-        string memory _symbol,
+        address _tokenAddress,
         int256 _newMinExpectedPrice
     ) external restricted {
+        require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
+        Token storage token = tokensData[_tokenAddress];
         require(
-            lockForDaysDurations[_symbol] != 0,
-            "Token not yet configured!"
-        );
-        require(
-            minExpectedPrices[_symbol] < _newMinExpectedPrice,
+            token.minExpectedPrice < _newMinExpectedPrice,
             "New price value invalid!"
         );
-        minExpectedPrices[_symbol] = _newMinExpectedPrice;
+
+        token.minExpectedPrice = _newMinExpectedPrice;
     }
 
-    function increaseLockForDays(string memory _symbol, uint256 _newLockForDays)
+    function increaseLockForDays(address _tokenAddress, uint256 _newLockForDays)
         external
         restricted
     {
+        require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
+        Token storage token = tokensData[_tokenAddress];
         require(
-            lockForDaysDurations[_symbol] != 0,
-            "Token not yet configured!"
-        );
-        require(
-            lockForDaysDurations[_symbol] < _newLockForDays,
+            token.lockForDays < _newLockForDays,
             "New lockForDays value invalid!"
         );
-        lockForDaysDurations[_symbol] = _newLockForDays;
+        token.lockForDays = _newLockForDays;
     }
 
-    function getPrice(string memory _symbol) public view returns (int256) {
-        if (priceFeeds[_symbol] == address(0)) {
+    function getPrice(address _tokenAddress) public view returns (int256) {
+        require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
+        Token storage token = tokensData[_tokenAddress];
+        if (token.priceFeed == ZERO) {
             return 0;
         }
 
-        (, int256 price, , , ) = PriceFeedInterface(priceFeeds[_symbol])
+        (, int256 price, , , ) = PriceFeedInterface(token.priceFeed)
         .latestRoundData();
-        return price / pricePrecisions[_symbol];
+        return price / token.pricePrecision;
     }
 
-    function canWithdraw(string memory _symbol) public view returns (bool) {
-        require(lockForDaysDurations[_symbol] != 0, "Token not yet configured");
+    function canWithdraw(address _tokenAddress) public view returns (bool) {
+        require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
+        Token memory token = tokensData[_tokenAddress];
 
-        uint256 releaseAt = createdAt +
-            (lockForDaysDurations[_symbol] * 1 days);
+        uint256 releaseAt = createdAt + (token.lockForDays * 1 days);
 
         if (releaseAt < block.timestamp) {
             return true;
-        } else if (minExpectedPrices[_symbol] == 0) {
+        } else if (token.minExpectedPrice == 0) {
             return false;
-        } else if (minExpectedPrices[_symbol] < getPrice(_symbol)) {
+        } else if (token.minExpectedPrice < getPrice(_tokenAddress)) {
             return true;
         } else return false;
     }
 
     function checkPriceFeed(address _feedAddress, int256 _precision)
-        public
+        external
         view
         returns (int256)
     {
@@ -162,19 +166,51 @@ contract SmartHoldERC20 {
         return price / _precision;
     }
 
-    function getConfiguredTokensCount() public view returns (uint256) {
-        return tokens.length;
+    function getConfiguredTokens() external view returns (address[] memory) {
+        return tokenAddresses;
     }
 
-    function withdraw(string memory _symbol) external restricted {
-        require(canWithdraw(_symbol), "You cannot withdraw yet.");
+    function getLockForDaysDuration(address _tokenAddress)
+        external
+        view
+        returns (uint256)
+    {
+        require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
+        Token memory token = tokensData[_tokenAddress];
+        return token.lockForDays;
+    }
 
-        if (keccak256(bytes(_symbol)) == keccak256(bytes("ETH"))) {
+    function getPricePrecision(address _tokenAddress)
+        external
+        view
+        returns (int256)
+    {
+        require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
+        Token memory token = tokensData[_tokenAddress];
+        return token.pricePrecision;
+    }
+
+    function getMinExpectedPrice(address _tokenAddress)
+        external
+        view
+        returns (int256)
+    {
+        require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
+        Token memory token = tokensData[_tokenAddress];
+        return token.minExpectedPrice;
+    }
+
+    function withdraw(address _tokenAddress) external restricted {
+        require(canWithdraw(_tokenAddress), "You cannot withdraw yet!");
+
+        if (_tokenAddress == ZERO) {
             payable(owner).transfer(address(this).balance);
         } else {
-            IERC20 token = IERC20(tokenAddresses[_symbol]);
-            uint256 tokenBalance = token.balanceOf(address(this));
-            token.transfer(owner, tokenBalance);
+            IERC20 erc20 = IERC20(_tokenAddress);
+            uint256 tokenBalance = erc20.balanceOf(address(this));
+            if (tokenBalance > 0) {
+                erc20.transfer(owner, tokenBalance);
+            }
         }
     }
 
