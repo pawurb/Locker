@@ -78,6 +78,7 @@ contract SmartHoldERC20 {
         int256 _pricePrecision
     ) external restricted {
         require(_lockForDays > 0, "Invalid lockForDays value.");
+        require(_lockForDays < 2000, "Too long lockup period!");
         require(_minExpectedPrice >= 0, "Invalid minExpectedPrice value.");
         require(!configuredTokens[_tokenAddress], "Token already configured!");
 

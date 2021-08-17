@@ -101,6 +101,12 @@ describe("SmartHoldERC20", async () => {
       , "already configured")
     })
 
+    it("does not allow locking funds for too long", async () => {
+      await expectRevert(
+        deposit.configureToken(tokenA.address, 4500, priceFeed.address, 150, 10e7)
+      , "Too long")
+    })
+
     it("raises an error for invalid price feed addresses", async () => {
       await expectRevert(
         deposit.configureToken(tokenA.address, 20, tokenA.address, 150, 10e7)
