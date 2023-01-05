@@ -1,10 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.4;
+pragma solidity 0.8.17;
 
 import "./PriceFeedInterface.sol";
 
 contract BuggyPriceFeedMock is PriceFeedInterface {
+    int256 public mockedPrice;
+
+    constructor(int256 _mockedPrice) {
+        mockedPrice = _mockedPrice;
+    }
+
     function latestRoundData()
         external
         view
@@ -17,7 +23,7 @@ contract BuggyPriceFeedMock is PriceFeedInterface {
             uint80 answeredInRound
         )
     {
-        revert("Random bug!");
+        revert("Price oracle bug!");
         return (123, 123, 123, 123, 123);
     }
 }

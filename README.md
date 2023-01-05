@@ -101,8 +101,8 @@ Please be aware that ChainLink price feeds are not guaranteed always to return t
 ```bash
 asdf install
 npm install
-npm run lint
-npm run test
+npx hardhat node
+npx hardhat test
 ```
 
 ### Security scan

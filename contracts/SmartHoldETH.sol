@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.4;
+pragma solidity 0.8.17;
 
 interface PriceFeedInterface {
     function latestRoundData()
@@ -15,7 +15,7 @@ interface PriceFeedInterface {
         );
 }
 
-pragma solidity 0.8.4;
+pragma solidity 0.8.17;
 
 contract SmartHoldETH {
     address public immutable owner;

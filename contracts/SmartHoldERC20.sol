@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.4;
+pragma solidity 0.8.17;
 
 interface IERC20 {
     function totalSupply() external view returns (uint256);
 
     function balanceOf(address account) external view returns (uint256);
 
-    function transfer(address recipient, uint256 amount)
-        external
-        returns (bool);
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
 
-    function allowance(address owner, address spender)
-        external
-        view
-        returns (uint256);
+    function allowance(
+        address owner,
+        address spender
+    ) external view returns (uint256);
 
     function approve(address spender, uint256 amount) external returns (bool);
 
@@ -45,7 +46,7 @@ interface PriceFeedInterface {
         );
 }
 
-pragma solidity 0.8.4;
+pragma solidity 0.8.17;
 
 contract SmartHoldERC20 {
     address public immutable owner = msg.sender;
@@ -117,10 +118,10 @@ contract SmartHoldERC20 {
         token.minExpectedPrice = _newMinExpectedPrice;
     }
 
-    function increaseLockForDays(address _tokenAddress, uint256 _newLockForDays)
-        external
-        restricted
-    {
+    function increaseLockForDays(
+        address _tokenAddress,
+        uint256 _newLockForDays
+    ) external restricted {
         require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
         Token storage token = tokensData[_tokenAddress];
         require(
@@ -138,7 +139,7 @@ contract SmartHoldERC20 {
         }
 
         (, int256 price, , , ) = PriceFeedInterface(token.priceFeed)
-        .latestRoundData();
+            .latestRoundData();
         return price / token.pricePrecision;
     }
 
@@ -157,13 +158,12 @@ contract SmartHoldERC20 {
         } else return false;
     }
 
-    function checkPriceFeed(address _feedAddress, int256 _precision)
-        external
-        view
-        returns (int256)
-    {
+    function checkPriceFeed(
+        address _feedAddress,
+        int256 _precision
+    ) external view returns (int256) {
         (, int256 price, , , ) = PriceFeedInterface(_feedAddress)
-        .latestRoundData();
+            .latestRoundData();
         return price / _precision;
     }
 
@@ -171,31 +171,25 @@ contract SmartHoldERC20 {
         return tokenAddresses;
     }
 
-    function getLockForDaysDuration(address _tokenAddress)
-        external
-        view
-        returns (uint256)
-    {
+    function getLockForDaysDuration(
+        address _tokenAddress
+    ) external view returns (uint256) {
         require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
         Token memory token = tokensData[_tokenAddress];
         return token.lockForDays;
     }
 
-    function getPricePrecision(address _tokenAddress)
-        external
-        view
-        returns (int256)
-    {
+    function getPricePrecision(
+        address _tokenAddress
+    ) external view returns (int256) {
         require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
         Token memory token = tokensData[_tokenAddress];
         return token.pricePrecision;
     }
 
-    function getMinExpectedPrice(address _tokenAddress)
-        external
-        view
-        returns (int256)
-    {
+    function getMinExpectedPrice(
+        address _tokenAddress
+    ) external view returns (int256) {
         require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
         Token memory token = tokensData[_tokenAddress];
         return token.minExpectedPrice;
