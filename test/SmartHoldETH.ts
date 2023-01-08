@@ -15,7 +15,6 @@ const advanceByDays = async (days) => {
 
 describe("SmartHoldETH", () => {
   let smartHold;
-  let priceFeed;
   let owner
   let notOwner
   const value = ethers.utils.parseEther("2.01")
@@ -32,7 +31,7 @@ describe("SmartHoldETH", () => {
 
     const PriceFeedMock = await ethers.getContractFactory(opts.priceFeedContract);
     const SmartHoldETH = await ethers.getContractFactory("SmartHoldETH");
-    priceFeed = await PriceFeedMock.deploy(opts.currentPrice * 10e7)
+    const priceFeed = await PriceFeedMock.deploy(opts.currentPrice * 10e7)
     smartHold = await SmartHoldETH.deploy(
       priceFeed.address,
       opts.lockForDays,
