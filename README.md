@@ -113,3 +113,4 @@ docker run -it -v ~/SmartHold-contracts/:/share trailofbits/eth-security-toolbox
 cd /share/SmartHold-contracts
 slither .
 ```
+
