@@ -6,6 +6,10 @@
 
 [Story of the project](https://pawelurbanek.com/smart-contract-development)
 
+## SmartHoldPublic
+
+The `SmartHoldPublic` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure an ETH/USD price value that will release the Ether. Compared to other contracts it can be intereacted with by everyone not only the account that deployed it.
+
 ## SmartHoldETH
 
 The `SmartHoldETH` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure an ETH/USD price value that will release the Ether. You need to initialize the contract with the following arguments:
@@ -90,9 +94,9 @@ Tokens will be returned to the address of a contract maker.
 ETH/USD price oracles powered by [ChainLink](https://docs.chain.link/docs/get-the-latest-price/):
 
 * [Mainnet](https://etherscan.io/address/0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419)
-* [Kovan](https://kovan.etherscan.io/address/0x9326BFA02ADD2366b30bacB125260Af641031331#code)
+* [Goerli](https://goerli.etherscan.io/address/0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e)
 
-[More price feeds](https://data.chain.link/).
+[More price feeds](https://docs.chain.link/data-feeds/price-feeds/addresses/).
 
 Please be aware that ChainLink price feeds are not guaranteed always to return the correct data. In case they stop responding, you'll only be able to withdraw your funds once the lock period has expired.
 

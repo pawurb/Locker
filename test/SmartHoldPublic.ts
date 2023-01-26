@@ -59,17 +59,17 @@ describe("SmartHoldPublic", () => {
 
     it("reader methods raise error if account is not configured", async () => {
       await expectRevert(
-        smartHold.connect(user2).getLockForDays()
+        smartHold.connect(user2).getLockForDays(user2.address)
       , "not configured")
     });
 
     it("accepts funds and sets correct default values", async () => {
       await smartHold.configureDeposit(10, 0, { value: oneEther });
 
-      expect(await smartHold.getLockForDays()).to.equal(10);
-      expect(await smartHold.getBalance()).to.equal(oneEther);
-      expect(await smartHold.getMinExpectedPrice()).to.equal(0);
-      assert.ok(await smartHold.getDepositedAt())
+      expect(await smartHold.getLockForDays(user1.address)).to.equal(10);
+      expect(await smartHold.getBalance(user1.address)).to.equal(oneEther);
+      expect(await smartHold.getMinExpectedPrice(user1.address)).to.equal(0);
+      assert.ok(await smartHold.getDepositedAt(user1.address))
     });
 
     it("does not allow configuring twice", async () => {
@@ -88,8 +88,8 @@ describe("SmartHoldPublic", () => {
 
     it("accepts initial config without depositing funds", async () => {
       await smartHold.configureDeposit(10, 0);
-      expect(await smartHold.getBalance()).to.equal(0);
-      assert.ok(await smartHold.getDepositedAt())
+      expect(await smartHold.getBalance(user1.address)).to.equal(0);
+      assert.ok(await smartHold.getDepositedAt(user1.address))
     });
   });
 
@@ -106,9 +106,9 @@ describe("SmartHoldPublic", () => {
 
     it("accepts funds and increases correct account balance", async () => {
       await smartHold.configureDeposit(10, 0, { value: oneEther });
-      expect(await smartHold.getBalance()).to.equal(oneEther);
+      expect(await smartHold.getBalance(user1.address)).to.equal(oneEther);
       await smartHold.deposit({ value: oneEther })
-      expect(await smartHold.getBalance()).to.equal(oneEther.mul(2));
+      expect(await smartHold.getBalance(user1.address)).to.equal(oneEther.mul(2));
     })
   })
 
@@ -119,20 +119,20 @@ describe("SmartHoldPublic", () => {
 
     it("account was not configured it raises an error", async () => {
       await expectRevert(
-        smartHold.canWithdraw()
+        smartHold.canWithdraw(user1.address)
       , "not configured")
     });
 
     it("return false for configured account", async () => {
       await smartHold.configureDeposit(10, 0, { value: oneEther });
       await advanceByDays(9)
-      expect(await smartHold.canWithdraw()).to.equal(false);
+      expect(await smartHold.canWithdraw(user1.address)).to.equal(false);
     });
 
     it("return true if time has passed", async () => {
       await smartHold.configureDeposit(10, 0, { value: oneEther });
       await advanceByDays(11)
-      expect(await smartHold.canWithdraw()).to.equal(true);
+      expect(await smartHold.canWithdraw(user1.address)).to.equal(true);
     });
 
     describe("price conditions", async () => {
@@ -142,12 +142,12 @@ describe("SmartHoldPublic", () => {
 
       it("minimumExpectedPrice has been configured and is higher than the current price it returns false", async () => {
         await smartHold.configureDeposit(10, 1100, { value: oneEther });
-        expect(await smartHold.canWithdraw()).to.equal(false);
+        expect(await smartHold.canWithdraw(user1.address)).to.equal(false);
       })
 
       it("minimumExpectedPrice has been configured and is lower than the current price it returns true", async () => {
         await smartHold.configureDeposit(10, 900, { value: oneEther });
-        expect(await smartHold.canWithdraw()).to.equal(true);
+        expect(await smartHold.canWithdraw(user1.address)).to.equal(true);
       })
     })
 
@@ -160,7 +160,7 @@ describe("SmartHoldPublic", () => {
         await smartHold.configureDeposit(10, 900, { value: oneEther });
 
         await expectRevert(
-          smartHold.canWithdraw()
+          smartHold.canWithdraw(user1.address)
         , "oracle bug")
       })
 
@@ -168,7 +168,7 @@ describe("SmartHoldPublic", () => {
         await smartHold.configureDeposit(10, 900, { value: oneEther });
 
         await advanceByDays(20)
-        expect(await smartHold.canWithdraw()).to.equal(true);
+        expect(await smartHold.canWithdraw(user1.address)).to.equal(true);
       })
     })
   });
@@ -195,7 +195,7 @@ describe("SmartHoldPublic", () => {
     it("sends ETH tokens to correct account if conditions are fulfilled", async () => {
       await smartHold.configureDeposit(10, 1100, { value: oneEther });
 
-      expect(await smartHold.getBalance()).to.equal(oneEther);
+      expect(await smartHold.getBalance(user1.address)).to.equal(oneEther);
       await advanceByDays(11)
 
       await expect(smartHold.withdraw()).to.changeEtherBalances(
@@ -203,14 +203,14 @@ describe("SmartHoldPublic", () => {
         [oneEther, oneEther.mul(-1)]
       );
 
-      expect(await smartHold.getBalance()).to.equal(0);
+      expect(await smartHold.getBalance(user1.address)).to.equal(0);
     })
 
     it("sends correct amound funds and does not affect deposits of other users", async () => {
       await smartHold.configureDeposit(10, 1100, { value: oneEther.mul(2) });
       await smartHold.connect(user2).configureDeposit(10, 1100, { value: oneEther });
-      expect(await smartHold.getBalance()).to.equal(oneEther.mul(2));
-      expect(await smartHold.connect(user2).getBalance()).to.equal(oneEther);
+      expect(await smartHold.getBalance(user1.address)).to.equal(oneEther.mul(2));
+      expect(await smartHold.getBalance(user2.address)).to.equal(oneEther);
 
       await advanceByDays(11)
 
@@ -219,8 +219,8 @@ describe("SmartHoldPublic", () => {
         [oneEther, oneEther.mul(-1)]
       );
 
-      expect(await smartHold.getBalance()).to.equal(oneEther.mul(2));
-      expect(await smartHold.connect(user2).getBalance()).to.equal(0);
+      expect(await smartHold.getBalance(user1.address)).to.equal(oneEther.mul(2));
+      expect(await smartHold.getBalance(user2.address)).to.equal(0);
     });
   });
 
@@ -247,7 +247,7 @@ describe("SmartHoldPublic", () => {
       await smartHold.configureDeposit(10, 1100, { value: oneEther });
 
       await smartHold.increaseLockForDays(12)
-      expect(await smartHold.getLockForDays()).to.equal(12);
+      expect(await smartHold.getLockForDays(user1.address)).to.equal(12);
     })
 
     it("does not allow overflowing lock for days value", async () => {
@@ -290,7 +290,7 @@ describe("SmartHoldPublic", () => {
       await smartHold.configureDeposit(10, 1100, { value: oneEther });
 
       await smartHold.increaseMinExpectedPrice(1200)
-      expect(await smartHold.getMinExpectedPrice()).to.equal(1200);
+      expect(await smartHold.getMinExpectedPrice(user1.address)).to.equal(1200);
     })
 
     it("does not allow overflowing lock for days value", async () => {

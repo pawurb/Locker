@@ -33,11 +33,6 @@ contract SmartHoldPublic {
     string private constant ERRALREADYCONFIGURED =
         "Address already configured.";
 
-    modifier onlyConfigured() {
-        require(configuredLocks[msg.sender], ERRNOTCONFIGURED);
-        _;
-    }
-
     constructor(address _priceFeed) {
         priceFeed = PriceFeedInterface(_priceFeed);
     }
@@ -61,33 +56,41 @@ contract SmartHoldPublic {
         locksData[msg.sender] = newLock;
     }
 
-    function deposit() external payable onlyConfigured {
+    function deposit() external payable {
+        require(configuredLocks[msg.sender], ERRNOTCONFIGURED);
         LockData storage lockData = locksData[msg.sender];
         lockData.balance = lockData.balance + msg.value;
     }
 
-    function getLockForDays() public view onlyConfigured returns (uint256) {
-        LockData memory lockData = locksData[msg.sender];
+    function getLockForDays(address _account) public view returns (uint256) {
+        require(configuredLocks[_account], ERRNOTCONFIGURED);
+        LockData memory lockData = locksData[_account];
         return lockData.lockForDays;
     }
 
-    function getDepositedAt() public view onlyConfigured returns (uint256) {
-        LockData memory lockData = locksData[msg.sender];
+    function getDepositedAt(address _account) public view returns (uint256) {
+        require(configuredLocks[_account], ERRNOTCONFIGURED);
+        LockData memory lockData = locksData[_account];
         return lockData.depositedAt;
     }
 
-    function getMinExpectedPrice() public view onlyConfigured returns (int256) {
-        LockData memory lockData = locksData[msg.sender];
+    function getMinExpectedPrice(
+        address _account
+    ) public view returns (int256) {
+        require(configuredLocks[_account], ERRNOTCONFIGURED);
+        LockData memory lockData = locksData[_account];
         return lockData.minExpectedPrice;
     }
 
-    function getBalance() public view onlyConfigured returns (uint256) {
-        LockData memory lockData = locksData[msg.sender];
+    function getBalance(address _account) public view returns (uint256) {
+        require(configuredLocks[_account], ERRNOTCONFIGURED);
+        LockData memory lockData = locksData[_account];
         return lockData.balance;
     }
 
-    function canWithdraw() public view onlyConfigured returns (bool) {
-        LockData memory lockData = locksData[msg.sender];
+    function canWithdraw(address _account) public view returns (bool) {
+        require(configuredLocks[_account], ERRNOTCONFIGURED);
+        LockData memory lockData = locksData[_account];
 
         uint256 releaseAt = lockData.depositedAt +
             (lockData.lockForDays * 1 days);
@@ -101,8 +104,9 @@ contract SmartHoldPublic {
         } else return false;
     }
 
-    function withdraw() external onlyConfigured {
-        require(canWithdraw(), "You cannot withdraw yet!");
+    function withdraw() external {
+        require(configuredLocks[msg.sender], ERRNOTCONFIGURED);
+        require(canWithdraw(msg.sender), "You cannot withdraw yet!");
         LockData storage lockData = locksData[msg.sender];
 
         uint256 balance = lockData.balance;
@@ -116,9 +120,8 @@ contract SmartHoldPublic {
         return price / 10e7;
     }
 
-    function increaseLockForDays(
-        uint256 _newLockForDays
-    ) external onlyConfigured {
+    function increaseLockForDays(uint256 _newLockForDays) external {
+        require(configuredLocks[msg.sender], ERRNOTCONFIGURED);
         require(_newLockForDays < 10000, "Too long lockup period!");
 
         LockData storage lockData = locksData[msg.sender];
@@ -130,9 +133,8 @@ contract SmartHoldPublic {
         lockData.lockForDays = _newLockForDays;
     }
 
-    function increaseMinExpectedPrice(
-        int256 _newMinExpectedPrice
-    ) external onlyConfigured {
+    function increaseMinExpectedPrice(int256 _newMinExpectedPrice) external {
+        require(configuredLocks[msg.sender], ERRNOTCONFIGURED);
         LockData storage lockData = locksData[msg.sender];
 
         require(
