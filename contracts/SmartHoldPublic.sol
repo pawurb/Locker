@@ -141,8 +141,13 @@ contract SmartHoldPublic {
         DepositData storage depositData = depositsData[msg.sender];
 
         require(
+            depositData.minExpectedPrice != 0,
+            "minExpectedPrice not configured!"
+        );
+
+        require(
             depositData.minExpectedPrice < _newMinExpectedPrice,
-            "New lockForDays value invalid!"
+            "New value invalid!"
         );
         depositData.minExpectedPrice = _newMinExpectedPrice;
     }

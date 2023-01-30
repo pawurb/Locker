@@ -293,12 +293,20 @@ describe("SmartHoldPublic", () => {
       expect(await smartHold.getMinExpectedPrice(user1.address)).to.equal(1200);
     })
 
-    it("does not allow overflowing lock for days value", async () => {
+    it("does not allow overflowing min expected price value", async () => {
       await smartHold.configureDeposit(10, 1100, { value: oneEther });
 
       await expectRevert(
         smartHold.increaseMinExpectedPrice(2 ** 256)
       , "overflow")
+    })
+
+    it("does not allow changing price if previously set to 0", async () => {
+      await smartHold.configureDeposit(10, 0, { value: oneEther });
+
+      await expectRevert(
+        smartHold.increaseMinExpectedPrice(10)
+      , "not configured")
     })
   });
 

@@ -155,6 +155,14 @@ describe("SmartHoldERC20", () => {
       const newPrice = await smartHold.getMinExpectedPrice(tokenA.address)
       expect(newPrice).to.equal(170)
     })
+
+    it("does not allow changing price if previously set to 0", async () => {
+      await smartHold.configureToken(tokenETH.address, 10, constants.ZERO_ADDRESS, 0, 10e7)
+
+      await expectRevert(
+        smartHold.increaseMinExpectedPrice(tokenETH.address, 20)
+      , "not configured")
+    })
   })
 
   describe("'increaseLockForDays'", async () => {

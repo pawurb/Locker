@@ -110,6 +110,12 @@ contract SmartHoldERC20 {
     ) external restricted {
         require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
         Token storage token = tokensData[_tokenAddress];
+
+        require(
+            token.minExpectedPrice != 0,
+            "minExpectedPrice not configured!"
+        );
+
         require(
             token.minExpectedPrice < _newMinExpectedPrice,
             "New price value invalid!"
