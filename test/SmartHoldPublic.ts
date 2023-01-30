@@ -301,4 +301,20 @@ describe("SmartHoldPublic", () => {
       , "overflow")
     })
   });
+
+  describe("'getConfiguredDeposits'", async () => {
+    beforeEach(async () => {
+      await setup({})
+    })
+
+    it("returns array of configured addresses", async () => {
+      await smartHold.configureDeposit(10, 1100, { value: oneEther });
+      await smartHold.connect(user2).configureDeposit(10, 1000, { value: oneEther });
+
+      const deposits = await smartHold.getConfiguredDeposits()
+      expect(deposits[0]).to.equal(user1.address)
+      expect(deposits[1]).to.equal(user2.address)
+      expect(deposits.length).to.equal(2)
+    })
+  })
 });

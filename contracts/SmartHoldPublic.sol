@@ -19,12 +19,13 @@ pragma solidity 0.8.17;
 
 contract SmartHoldPublic {
     PriceFeedInterface internal priceFeed;
-    mapping(address => LockData) public locksData;
-    mapping(address => bool) public configuredLocks;
+    mapping(address => DepositData) public depositsData;
+    mapping(address => bool) public configuredDeposits;
+    address[] public depositsAddresses;
 
-    struct LockData {
+    struct DepositData {
         uint256 lockForDays;
-        uint256 depositedAt;
+        uint256 createdAt;
         int256 minExpectedPrice;
         uint256 balance;
     }
@@ -41,76 +42,78 @@ contract SmartHoldPublic {
         uint256 _lockForDays,
         int256 _minExpectedPrice
     ) external payable {
-        require(!configuredLocks[msg.sender], ERRALREADYCONFIGURED);
+        require(!configuredDeposits[msg.sender], ERRALREADYCONFIGURED);
         require(_minExpectedPrice >= 0, "Invalid minExpectedPrice value.");
         require(_lockForDays < 10000, "Too long lockup period!");
 
-        LockData memory newLock = LockData({
+        depositsAddresses.push(msg.sender);
+
+        DepositData memory newLock = DepositData({
             lockForDays: _lockForDays,
-            depositedAt: block.timestamp,
+            createdAt: block.timestamp,
             minExpectedPrice: _minExpectedPrice,
             balance: msg.value
         });
 
-        configuredLocks[msg.sender] = true;
-        locksData[msg.sender] = newLock;
+        configuredDeposits[msg.sender] = true;
+        depositsData[msg.sender] = newLock;
     }
 
     function deposit() external payable {
-        require(configuredLocks[msg.sender], ERRNOTCONFIGURED);
-        LockData storage lockData = locksData[msg.sender];
-        lockData.balance = lockData.balance + msg.value;
+        require(configuredDeposits[msg.sender], ERRNOTCONFIGURED);
+        DepositData storage depositData = depositsData[msg.sender];
+        depositData.balance = depositData.balance + msg.value;
     }
 
     function getLockForDays(address _account) public view returns (uint256) {
-        require(configuredLocks[_account], ERRNOTCONFIGURED);
-        LockData memory lockData = locksData[_account];
-        return lockData.lockForDays;
+        require(configuredDeposits[_account], ERRNOTCONFIGURED);
+        DepositData memory depositData = depositsData[_account];
+        return depositData.lockForDays;
     }
 
     function getDepositedAt(address _account) public view returns (uint256) {
-        require(configuredLocks[_account], ERRNOTCONFIGURED);
-        LockData memory lockData = locksData[_account];
-        return lockData.depositedAt;
+        require(configuredDeposits[_account], ERRNOTCONFIGURED);
+        DepositData memory depositData = depositsData[_account];
+        return depositData.createdAt;
     }
 
     function getMinExpectedPrice(
         address _account
     ) public view returns (int256) {
-        require(configuredLocks[_account], ERRNOTCONFIGURED);
-        LockData memory lockData = locksData[_account];
-        return lockData.minExpectedPrice;
+        require(configuredDeposits[_account], ERRNOTCONFIGURED);
+        DepositData memory depositData = depositsData[_account];
+        return depositData.minExpectedPrice;
     }
 
     function getBalance(address _account) public view returns (uint256) {
-        require(configuredLocks[_account], ERRNOTCONFIGURED);
-        LockData memory lockData = locksData[_account];
-        return lockData.balance;
+        require(configuredDeposits[_account], ERRNOTCONFIGURED);
+        DepositData memory depositData = depositsData[_account];
+        return depositData.balance;
     }
 
     function canWithdraw(address _account) public view returns (bool) {
-        require(configuredLocks[_account], ERRNOTCONFIGURED);
-        LockData memory lockData = locksData[_account];
+        require(configuredDeposits[_account], ERRNOTCONFIGURED);
+        DepositData memory depositData = depositsData[_account];
 
-        uint256 releaseAt = lockData.depositedAt +
-            (lockData.lockForDays * 1 days);
+        uint256 releaseAt = depositData.createdAt +
+            (depositData.lockForDays * 1 days);
 
         if (releaseAt < block.timestamp) {
             return true;
-        } else if (lockData.minExpectedPrice == 0) {
+        } else if (depositData.minExpectedPrice == 0) {
             return false;
-        } else if (lockData.minExpectedPrice < getETHPrice()) {
+        } else if (depositData.minExpectedPrice < getETHPrice()) {
             return true;
         } else return false;
     }
 
     function withdraw() external {
-        require(configuredLocks[msg.sender], ERRNOTCONFIGURED);
+        require(configuredDeposits[msg.sender], ERRNOTCONFIGURED);
         require(canWithdraw(msg.sender), "You cannot withdraw yet!");
-        LockData storage lockData = locksData[msg.sender];
+        DepositData storage depositData = depositsData[msg.sender];
 
-        uint256 balance = lockData.balance;
-        lockData.balance = 0;
+        uint256 balance = depositData.balance;
+        depositData.balance = 0;
 
         payable(msg.sender).transfer(balance);
     }
@@ -121,26 +124,30 @@ contract SmartHoldPublic {
     }
 
     function increaseLockForDays(uint256 _newLockForDays) external {
-        require(configuredLocks[msg.sender], ERRNOTCONFIGURED);
+        require(configuredDeposits[msg.sender], ERRNOTCONFIGURED);
         require(_newLockForDays < 10000, "Too long lockup period!");
 
-        LockData storage lockData = locksData[msg.sender];
+        DepositData storage depositData = depositsData[msg.sender];
 
         require(
-            lockData.lockForDays < _newLockForDays,
+            depositData.lockForDays < _newLockForDays,
             "New lockForDays value invalid!"
         );
-        lockData.lockForDays = _newLockForDays;
+        depositData.lockForDays = _newLockForDays;
     }
 
     function increaseMinExpectedPrice(int256 _newMinExpectedPrice) external {
-        require(configuredLocks[msg.sender], ERRNOTCONFIGURED);
-        LockData storage lockData = locksData[msg.sender];
+        require(configuredDeposits[msg.sender], ERRNOTCONFIGURED);
+        DepositData storage depositData = depositsData[msg.sender];
 
         require(
-            lockData.minExpectedPrice < _newMinExpectedPrice,
+            depositData.minExpectedPrice < _newMinExpectedPrice,
             "New lockForDays value invalid!"
         );
-        lockData.minExpectedPrice = _newMinExpectedPrice;
+        depositData.minExpectedPrice = _newMinExpectedPrice;
+    }
+
+    function getConfiguredDeposits() external view returns (address[] memory) {
+        return depositsAddresses;
     }
 }
