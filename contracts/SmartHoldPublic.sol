@@ -71,7 +71,7 @@ contract SmartHoldPublic {
         return depositData.lockForDays;
     }
 
-    function getDepositedAt(address _account) public view returns (uint256) {
+    function getCreatedAt(address _account) public view returns (uint256) {
         require(configuredDeposits[_account], ERRNOTCONFIGURED);
         DepositData memory depositData = depositsData[_account];
         return depositData.createdAt;

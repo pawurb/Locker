@@ -69,7 +69,7 @@ describe("SmartHoldPublic", () => {
       expect(await smartHold.getLockForDays(user1.address)).to.equal(10);
       expect(await smartHold.getBalance(user1.address)).to.equal(oneEther);
       expect(await smartHold.getMinExpectedPrice(user1.address)).to.equal(0);
-      assert.ok(await smartHold.getDepositedAt(user1.address))
+      assert.ok(await smartHold.getCreatedAt(user1.address))
     });
 
     it("does not allow configuring twice", async () => {
@@ -89,7 +89,7 @@ describe("SmartHoldPublic", () => {
     it("accepts initial config without depositing funds", async () => {
       await smartHold.configureDeposit(10, 0);
       expect(await smartHold.getBalance(user1.address)).to.equal(0);
-      assert.ok(await smartHold.getDepositedAt(user1.address))
+      assert.ok(await smartHold.getCreatedAt(user1.address))
     });
   });
 
