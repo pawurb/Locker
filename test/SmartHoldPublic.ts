@@ -110,6 +110,12 @@ describe("SmartHoldPublic", () => {
       await smartHold.deposit({ value: oneEther })
       expect(await smartHold.getBalance(user1.address)).to.equal(oneEther.mul(2));
     })
+
+    it("does not accept ETH transfer without method call", async () => {
+      await expectRevert(
+        user1.sendTransaction({ value: oneEther, to: smartHold.address })
+      , "transaction may fail")
+    })
   })
 
   describe("'canWithdraw'", () => {
