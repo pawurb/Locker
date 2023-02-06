@@ -8,11 +8,35 @@
 
 ## SmartHoldPublic
 
-The `SmartHoldPublic` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure an ETH/USD price value that will release the Ether. Compared to other contracts it can be intereacted with by everyone not only the account that deployed it.
+![Mr Bean rollercoaster](https://github.com/pawurb/SmartHold-contracts/raw/master/mr-bean-rollercoaster.gif)
+
+The `SmartHoldPublic` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure an ETH/USD price value that will release the Ether. Compared to other contracts, it can be used by everyone, not only the account that deployed it.
+
+You can deploy your contract instance or use already deployed contracts:
+
+* [Mainnet](https://etherscan.io/address/0xDCEE8f33608FA6563ef1731f772B7b2ac3589160)
+* [Goerli](https://goerli.etherscan.io/address/0xd18f13ebad28cd16bf14096a128627c750a88ea7)
+
+### API
+
+`constructor(address _priceFeed)`
+
+* `_priceFeedAddress` - `[address]` address of the price feed oracle contract.
+
+You can interact with a deployed contract using the following methods:
+
+![Etherscan interface](https://github.com/pawurb/SmartHold-contracts/raw/master/configure-deposit.png)
+
+* `configureDeposit(uint256 _lockForDays, int256 _minExpectedPrice)` - call this method to create your deposit. You can specify `_lockForDays` to set how long your funds should be locked. `_minExpectedPrice` is ETH price in USD as reported by configured price oracle. If Ether price is larger then configured minimum price, you'll be able to withdraw your funds even if the lock period has not expired. You can set `_minExpectedPrice` to `0` to disable releasing funds based on price. This method is `payable`, so optionally, you can use it to deposit initial funds.
+* `deposit()` - using this method, you can add more funds if your account is already configured.
+* `canWithdraw(address _account) returns (bool)` - check if a provided address can withdraw funds.
+* `withdraw()` - withdraw funds to the caller's address if possible.
+* `increaseLockForDays(uint256 _newLockForDays)` - increase the lock duration for your deposit.
+* `increaseMinExpectedPrice(int256 _newMinExpectedPrice)` - min expected price for your deposit. You can use this method if the price condition is already configured.
 
 ## SmartHoldETH
 
-The `SmartHoldETH` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure an ETH/USD price value that will release the Ether. You need to initialize the contract with the following arguments:
+The `SmartHoldETH` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure an ETH/USD price value that will release the Ether. You need to deploy the contract with the following arguments:
 
 ```node
 const deposit = await SmartHoldETH.new(
