@@ -15,6 +15,8 @@ The `SmartHoldPublic` contract can be used to lock your Ether for a predefined p
 You can deploy your contract instance or use already deployed contracts:
 
 * [Mainnet](https://etherscan.io/address/0xDCEE8f33608FA6563ef1731f772B7b2ac3589160)
+* [Optimism](https://optimistic.etherscan.io/address/0x2aa82f32f58100a403ac9b7d0aef96d094fe21c3)
+* [Arbitrum](https://arbiscan.io/address/0x2aa82f32f58100a403ac9b7d0aef96d094fe21c3)
 * [Goerli](https://goerli.etherscan.io/address/0xd18f13ebad28cd16bf14096a128627c750a88ea7)
 
 ### API
