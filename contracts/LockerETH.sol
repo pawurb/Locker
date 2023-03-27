@@ -17,11 +17,10 @@ interface PriceFeedInterface {
 
 pragma solidity 0.8.17;
 
-contract SmartHoldPublic {
+contract LockerETH {
     PriceFeedInterface internal priceFeed;
-    mapping(address => DepositData) public depositsData;
-    mapping(address => bool) public configuredDeposits;
-    address[] public depositsAddresses;
+    mapping(address => DepositData) public deposits;
+    address[] public depositors;
 
     struct DepositData {
         uint256 lockForDays;
@@ -30,6 +29,7 @@ contract SmartHoldPublic {
         uint256 balance;
     }
 
+    address private constant ZERO_ADDRESS = address(0x0);
     string private constant ERRNOTCONFIGURED = "Address not configured.";
     string private constant ERRALREADYCONFIGURED =
         "Address already configured.";
@@ -38,15 +38,21 @@ contract SmartHoldPublic {
         priceFeed = PriceFeedInterface(_priceFeed);
     }
 
+    modifier onlyDepositor() {
+        require(deposits[msg.sender].createdAt != 0, ERRNOTCONFIGURED);
+        _;
+    }
+
     function configureDeposit(
         uint256 _lockForDays,
         int256 _minExpectedPrice
     ) external payable {
-        require(!configuredDeposits[msg.sender], ERRALREADYCONFIGURED);
+        require(deposits[msg.sender].createdAt == 0, ERRALREADYCONFIGURED);
+
         require(_minExpectedPrice >= 0, "Invalid minExpectedPrice value.");
         require(_lockForDays < 10000, "Too long lockup period!");
 
-        depositsAddresses.push(msg.sender);
+        depositors.push(msg.sender);
 
         DepositData memory newLock = DepositData({
             lockForDays: _lockForDays,
@@ -55,45 +61,18 @@ contract SmartHoldPublic {
             balance: msg.value
         });
 
-        configuredDeposits[msg.sender] = true;
-        depositsData[msg.sender] = newLock;
+        deposits[msg.sender] = newLock;
     }
 
-    function deposit() external payable {
-        require(configuredDeposits[msg.sender], ERRNOTCONFIGURED);
-        DepositData storage depositData = depositsData[msg.sender];
+    function deposit() external payable onlyDepositor {
+        DepositData storage depositData = deposits[msg.sender];
         depositData.balance = depositData.balance + msg.value;
     }
 
-    function getLockForDays(address _account) public view returns (uint256) {
-        require(configuredDeposits[_account], ERRNOTCONFIGURED);
-        DepositData memory depositData = depositsData[_account];
-        return depositData.lockForDays;
-    }
-
-    function getCreatedAt(address _account) public view returns (uint256) {
-        require(configuredDeposits[_account], ERRNOTCONFIGURED);
-        DepositData memory depositData = depositsData[_account];
-        return depositData.createdAt;
-    }
-
-    function getMinExpectedPrice(
+    function canWithdraw(
         address _account
-    ) public view returns (int256) {
-        require(configuredDeposits[_account], ERRNOTCONFIGURED);
-        DepositData memory depositData = depositsData[_account];
-        return depositData.minExpectedPrice;
-    }
-
-    function getBalance(address _account) public view returns (uint256) {
-        require(configuredDeposits[_account], ERRNOTCONFIGURED);
-        DepositData memory depositData = depositsData[_account];
-        return depositData.balance;
-    }
-
-    function canWithdraw(address _account) public view returns (bool) {
-        require(configuredDeposits[_account], ERRNOTCONFIGURED);
-        DepositData memory depositData = depositsData[_account];
+    ) public view onlyDepositor returns (bool) {
+        DepositData memory depositData = deposits[_account];
 
         uint256 releaseAt = depositData.createdAt +
             (depositData.lockForDays * 1 days);
@@ -107,10 +86,9 @@ contract SmartHoldPublic {
         } else return false;
     }
 
-    function withdraw() external {
-        require(configuredDeposits[msg.sender], ERRNOTCONFIGURED);
+    function withdraw() external onlyDepositor {
         require(canWithdraw(msg.sender), "You cannot withdraw yet!");
-        DepositData storage depositData = depositsData[msg.sender];
+        DepositData storage depositData = deposits[msg.sender];
 
         uint256 balance = depositData.balance;
         depositData.balance = 0;
@@ -123,11 +101,12 @@ contract SmartHoldPublic {
         return price / 10e7;
     }
 
-    function increaseLockForDays(uint256 _newLockForDays) external {
-        require(configuredDeposits[msg.sender], ERRNOTCONFIGURED);
+    function increaseLockForDays(
+        uint256 _newLockForDays
+    ) external onlyDepositor {
         require(_newLockForDays < 10000, "Too long lockup period!");
 
-        DepositData storage depositData = depositsData[msg.sender];
+        DepositData storage depositData = deposits[msg.sender];
 
         require(
             depositData.lockForDays < _newLockForDays,
@@ -136,9 +115,12 @@ contract SmartHoldPublic {
         depositData.lockForDays = _newLockForDays;
     }
 
-    function increaseMinExpectedPrice(int256 _newMinExpectedPrice) external {
-        require(configuredDeposits[msg.sender], ERRNOTCONFIGURED);
-        DepositData storage depositData = depositsData[msg.sender];
+    function increaseMinExpectedPrice(
+        int256 _newMinExpectedPrice
+    ) external onlyDepositor {
+        require(deposits[msg.sender].createdAt != 0, ERRNOTCONFIGURED);
+
+        DepositData storage depositData = deposits[msg.sender];
 
         require(
             depositData.minExpectedPrice != 0,
@@ -152,7 +134,7 @@ contract SmartHoldPublic {
         depositData.minExpectedPrice = _newMinExpectedPrice;
     }
 
-    function getConfiguredDeposits() external view returns (address[] memory) {
-        return depositsAddresses;
+    function getDepositors() external view returns (address[] memory) {
+        return depositors;
     }
 }

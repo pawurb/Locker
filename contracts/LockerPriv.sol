@@ -48,7 +48,7 @@ interface PriceFeedInterface {
 
 pragma solidity 0.8.17;
 
-contract SmartHoldERC20 {
+contract LockerPriv {
     address public immutable owner = msg.sender;
     uint256 public immutable createdAt = block.timestamp;
     mapping(address => bool) public configuredTokens;

@@ -1,47 +1,199 @@
-# SmartHold - a simple way to lock and hold your ETH or ERC20 in a smart contract [![CircleCI](https://circleci.com/gh/pawurb/SmartHold-contracts.svg?style=svg)](https://circleci.com/gh/pawurb/SmartHold-contracts)
+# Locker - provides a way to lock and hold your ETH or ERC20 in a smart contract [![CircleCI](https://circleci.com/gh/pawurb/Locker.svg?style=svg)](https://circleci.com/gh/pawurb/Locker)
 
-**This is a BETA software that has not been audited for security. USE AT YOUR OWN RISK!**
+**This is a BETA software that has not been audited for security. Incorrectly using these smart contracts can result in irreversible loss of your funds. USE AT YOUR OWN RISK!**
 
 **Disclaimer: The information provided in the readme is for educational purposes only and should not be treated as investment advice.**
 
 [Story of the project](https://pawelurbanek.com/smart-contract-development)
 
-## SmartHoldPublic
+## Locker
 
-![Mr Bean rollercoaster](https://github.com/pawurb/SmartHold-contracts/raw/master/mr-bean-rollercoaster.gif)
+This smart contract allows users to deposit ERC20 tokens and lock them for a certain period of time. Optionally, you can configure a minimum USD price that will release tokens before the time has passed.
 
-The `SmartHoldPublic` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure an ETH/USD price value that will release the Ether. Compared to other contracts, it can be used by everyone, not only the account that deployed it.
-
-You can deploy your contract instance or use already deployed contracts:
-
-* [Mainnet](https://etherscan.io/address/0xDCEE8f33608FA6563ef1731f772B7b2ac3589160)
-* [Optimism](https://optimistic.etherscan.io/address/0x2aa82f32f58100a403ac9b7d0aef96d094fe21c3)
-* [Arbitrum](https://arbiscan.io/address/0x2aa82f32f58100a403ac9b7d0aef96d094fe21c3)
-* [Goerli](https://goerli.etherscan.io/address/0xd18f13ebad28cd16bf14096a128627c750a88ea7)
+**Do not send any ERC20 tokens directly to this contract or they will be lost!!**
 
 ### API
 
-`constructor(address _priceFeed)`
+Each user account can configure any number of distinct ERC20 tokens. But, you cannot configure different time/price conditions for the same ERC20 token and account. To do it you have to use a different account.
 
-* `_priceFeedAddress` - `[address]` address of the price feed oracle contract.
+#### `configureDeposit`
 
-You can interact with a deployed contract using the following methods:
+```solidity
+function configureDeposit(
+    address _token,
+    uint256 _lockForDays
+)
+```
 
-![Etherscan interface](https://github.com/pawurb/SmartHold-contracts/raw/master/configure-deposit.png)
+This function is used to configure a deposit without a minimum expected price for a specific token. It means that token will can released only after the configured time period has passed.
 
-* `configureDeposit(uint256 _lockForDays, int256 _minExpectedPrice)` - call this method to create your deposit. You can specify `_lockForDays` to set how long your funds should be locked. `_minExpectedPrice` is ETH price in USD as reported by configured price oracle. If Ether price is larger then configured minimum price, you'll be able to withdraw your funds even if the lock period has not expired. You can set `_minExpectedPrice` to `0` to disable releasing funds based on price. This method is `payable`, so optionally, you can use it to deposit initial funds.
-* `deposit()` - using this method, you can add more funds if your account is already configured.
-* `canWithdraw(address _account) returns (bool)` - check if a provided address can withdraw funds.
-* `withdraw()` - withdraw funds to the caller's address if possible.
-* `increaseLockForDays(uint256 _newLockForDays)` - increase the lock duration for your deposit.
-* `increaseMinExpectedPrice(int256 _newMinExpectedPrice)` - min expected price for your deposit. You can use this method if the price condition is already configured.
+**Arguments:**
 
-## SmartHoldETH
+* `_token`: Address of ERC20 token to be configured.
+* `_lockForDays`: The number of days the tokens will be locked.
 
-The `SmartHoldETH` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure an ETH/USD price value that will release the Ether. You need to deploy the contract with the following arguments:
+After configuring the ERC20 token release conditions you have to approve `Locker` contract to transfer it from your account. To do it you have to make the following method call:
+
+```solidity
+  ERC20(tokenAddress).approve(lockerAddress, amount);
+```
+
+If you're not sure how to do it, then better don't. You can lose your tokens by incorrectly transferring them into the `Locker` smart contract.
+
+#### `configureDepositWithPrice`
+
+```solidity
+function configureDepositWithPrice(
+    address _token,
+    uint256 _lockForDays,
+    address _priceFeed,
+    int256 _minExpectedPrice,
+    int256 _pricePrecision
+)
+```
+
+This function is used to configure a deposit with a minimum expected price for a specific token.
+
+**Arguments:**
+
+* `_token`: Address of ERC20 token to be configured.
+* `_lockForDays`: The number of days the tokens will be locked.
+* `_priceFeed`: The address of the price feed smart contract.
+* `_minExpectedPrice`: The minimum expected price for the token.
+* `_pricePrecision`: The oracel price precision for the token. Most ChainLink oracles use `10e7`. You can use `checkPriceFeed` method to confirm price precision used by your choosen oracle.
+
+#### `deposit`
+
+```solidity
+function configureDepositWithPrice(
+    address _token,
+    uint256 _amount
+)
+```
+
+Transfers and locks the `_amount` of tokens to the ERC20 `_token` address into the contract. Token must be configured and correct amount approved before calling this method.
+
+**Arguments:**
+
+* `_token`: Address of ERC20 token to be deposited.
+* `_amount`: amount of tokens to deposit.
+
+#### `canWithdraw`
+
+```solidity
+function canWithdraw(
+    address _account,
+    address _token
+) returns (bool)
+```
+
+Returns `true` if the specified `_account` is eligible to withdraw deposit of their ERC20 `_token` otherwise `false`. The withdrawal is allowed if the lock period is over, or if the expected price is reached.
+
+**Arguments:**
+
+* `_account`: Owner account of the deposit.
+* `_token`: Address of ERC20 token to be withdrawn.
+
+#### `increaseMinExpectedPrice`
+
+```solidity
+function increaseMinExpectedPrice(
+  address _token,
+  int256 _newMinExpectedPrice
+)
+```
+
+Increases the minimum expected price for the specified ERC20 `_token` for the caller to `_newMinExpectedPrice`, if it is greater than the current minimum expected price.
+
+**Arguments:**
+
+* `_token`: Address of ERC20 token to be reconfigured.
+* `_newMinExpectedPrice`: New value of minimum expected price that will release the token.
+
+#### `increaseLockForDays`
+
+```solidity
+function increaseLockForDays(
+  address _token,
+  int256 _newLockForDays
+)
+```
+
+Increases the lock period for the specified ERC20 `_token` for the caller to `_newLockForDays`, if it is greater than the current lock period.
+
+**Arguments:**
+
+* `_token`: Address of ERC20 token to be reconfigured.
+* `_newMinExpectedPrice`: New number of days for how long the token should be locked.
+
+#### `checkPriceFeed`
+
+```solidity
+function checkPriceFeed(
+  address _feedAddress,
+  int256 _precision
+) returns (int256)
+```
+
+Checks the price feed at the specified `_feedAddress` and returns the latest price divided by the specified `_precision`. You should use it to verify price oracle smart contract and necessary price precision before using it in `configureDepositWithPrice` method.
+
+**Arguments:**
+
+* `_feedAddress`: Address of the price oracle smart contract.
+* `_precision`: Number by which a raw price value should be divided.
+
+#### `getPrice`
+
+```solidity
+function getPrice(
+  address _account,
+  address _token
+) returns (int256)
+```
+
+Returns the latest price of the specified ERC20 `_token` for the specified `_account`. If the price feed is not set, then 0 is returned.
+
+**Arguments:**
+
+* `_account`: Address of the account depositing target token.
+* `_token`: Address of ERC20 token for which to check the price.
+
+#### `getDepositors`
+
+```solidity
+function getDepositors() returns address[]
+```
+
+Returns an array of addresses representing all the depositors.
+
+#### `getConfiguredTokens`
+
+```solidity
+function getConfiguredTokens(
+  address _account
+) returns (address[])
+```
+
+Returns an array of ERC20 tokens that have been configured for the specified `_account`.
+
+**Arguments:**
+
+* `_account`: Address of the account.
+
+#### `deposits`
+
+```solidity
+mapping(address => mapping(address => DepositData)) deposits;
+```
+
+A nested hash representing configuration of all stored tokens. You can use it to read ERC20 token configuration based on account and token address.
+
+## LockerETH
+
+The `LockerETH` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure an ETH/USD price value that will release the Ether. You need to deploy the contract with the following arguments:
 
 ```node
-const deposit = await SmartHoldETH.new(
+const deposit = await LockerETH.new(
   0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419,
   750,
   10000
@@ -62,13 +214,13 @@ const deposit = await SmartHoldETH.new(
 
 You can send more Ether to the contract after it has been initialized. Only maker of the contract can withdraw the funds. Don't send ERC20 tokens to this contract because they will be stuck forever.
 
-## SmartHoldERC20
+## LockerPriv
 
 This contract can hold both ERC20 and ETH tokens. You can use the contract in the following way:
 
 ```node
-const deposit = await SmartHoldERC20.new()
-await deposit.configureToken(
+const locker = await LockerPriv.new()
+await locker.configureToken(
   0x0d8775f648430679a709e98d2b0cb6250d2887ef,
   750,
   0x9441D7556e7820B5ca42082cfa99487D56AcA958,
@@ -139,8 +291,8 @@ npx hardhat test
 
 ```bash
 docker pull trailofbits/eth-security-toolbox
-docker run -it -v ~/SmartHold-contracts/:/share trailofbits/eth-security-toolbox
-cd /share/SmartHold-contracts
+docker run -it -v ~/Locker/:/share trailofbits/eth-security-toolbox
+cd /share/Locker
 slither .
 ```
 

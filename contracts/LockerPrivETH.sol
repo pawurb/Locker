@@ -17,7 +17,7 @@ interface PriceFeedInterface {
 
 pragma solidity 0.8.17;
 
-contract SmartHoldETH {
+contract LockerPrivETH {
     address public immutable owner;
     uint256 public immutable depositedAt;
     uint256 public immutable lockForDays;

@@ -13,7 +13,7 @@ const advanceByDays = async (days) => {
   await time.increase(days * 86400)
 }
 
-describe("SmartHoldERC20", () => {
+describe("LockerPriv", () => {
   const value = ethers.utils.parseEther("1")
   const lockForDays = 5
   let tokenA;
@@ -29,12 +29,12 @@ describe("SmartHoldERC20", () => {
     opts.priceFeedContract = opts.priceFeedContract || "PriceFeedMock"
 
     const PriceFeedMock = await ethers.getContractFactory(opts.priceFeedContract);
-    const SmartHoldERC20 = await ethers.getContractFactory("SmartHoldERC20");
+    const LockerPriv= await ethers.getContractFactory("LockerPriv");
     const MockTokenA = await ethers.getContractFactory("MockTokenA");
     const MockETHTokenB = await ethers.getContractFactory("MockETHTokenB");
 
     priceFeed = await PriceFeedMock.deploy(opts.currentPrice * 10e7)
-    smartHold = await SmartHoldERC20.deploy()
+    smartHold = await LockerPriv.deploy()
     tokenA = await MockTokenA.connect(notOwner).deploy()
     tokenETH = await MockETHTokenB.connect(notOwner).deploy()
   }
