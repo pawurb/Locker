@@ -13,7 +13,7 @@ const advanceByDays = async (days) => {
   await time.increase(days * 86400)
 }
 
-describe("LockerPrivETH", () => {
+describe("LockerETHPriv", () => {
   let smartHold;
   let owner
   let notOwner
@@ -30,9 +30,9 @@ describe("LockerPrivETH", () => {
     notOwner = (await ethers.getSigners())[1]
 
     const PriceFeedMock = await ethers.getContractFactory(opts.priceFeedContract);
-    const LockerPrivETH = await ethers.getContractFactory("LockerPrivETH");
+    const LockerETHPriv = await ethers.getContractFactory("LockerETHPriv");
     const priceFeed = await PriceFeedMock.deploy(opts.currentPrice * 10e7)
-    smartHold = await LockerPrivETH.deploy(
+    smartHold = await LockerETHPriv.deploy(
       priceFeed.address,
       opts.lockForDays,
       opts.minimumPrice,

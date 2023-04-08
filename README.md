@@ -6,7 +6,7 @@
 
 [Story of the project](https://pawelurbanek.com/smart-contract-development)
 
-## Locker
+## Locker.sol
 
 This smart contract allows users to deposit ERC20 tokens and lock them for a certain period of time. Optionally, you can configure a minimum USD price that will release tokens before the time has passed.
 
@@ -188,7 +188,7 @@ mapping(address => mapping(address => DepositData)) deposits;
 
 A nested hash representing configuration of all stored tokens. You can use it to read ERC20 token configuration based on account and token address.
 
-## LockerETH
+## LockerETH.sol
 
 The `LockerETH` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure an ETH/USD price value that will release the Ether. You need to deploy the contract with the following arguments:
 
@@ -214,7 +214,7 @@ const deposit = await LockerETH.new(
 
 You can send more Ether to the contract after it has been initialized. Only maker of the contract can withdraw the funds. Don't send ERC20 tokens to this contract because they will be stuck forever.
 
-## LockerPriv
+## LockerPriv.sol
 
 This contract can hold both ERC20 and ETH tokens. You can use the contract in the following way:
 
