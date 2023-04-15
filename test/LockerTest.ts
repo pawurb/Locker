@@ -69,7 +69,6 @@ describe("Locker", () => {
     it("adds token data for the correct user without price conditions", async () => {
       await locker.configureDeposit(tokenA.address, 20)
       const depositData = await locker.deposits(user1.address, tokenA.address)
-      expect(depositData.token).to.equal(tokenA.address)
       expect(depositData.lockForDays).to.equal(20)
       expect(depositData.minExpectedPrice).to.equal(0)
       expect(depositData.pricePrecision).to.equal(0)
@@ -85,7 +84,6 @@ describe("Locker", () => {
       await locker.configureDepositWithPrice(tokenA.address, 20, priceFeed.address, 150, 10e7)
 
       const depositData = await locker.deposits(user1.address, tokenA.address)
-      expect(depositData.token).to.equal(tokenA.address)
       expect(depositData.lockForDays).to.equal(20)
       expect(depositData.minExpectedPrice).to.equal(150)
       expect(depositData.pricePrecision).to.equal(10e7)
@@ -122,6 +120,12 @@ describe("Locker", () => {
       await expectRevert(
         locker.configureDepositWithPrice(tokenA.address, 20, tokenA.address, 150, 10e7)
       , "revert")
+    })
+
+    it("raises an error for invalid lockForDays value", async () => {
+      await expectRevert(
+        locker.configureDepositWithPrice(tokenA.address, 0, tokenA.address, 150, 10e7)
+      , "Invalid lockForDays value")
     })
 
     it("enables 'getPrice' for a given token and saves minimumExpectedPrice", async () => {

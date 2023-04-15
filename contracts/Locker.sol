@@ -55,7 +55,6 @@ contract Locker {
     mapping(address => address[]) public configuredTokens;
 
     struct DepositData {
-        address token;
         uint256 createdAt;
         uint256 lockForDays;
         int256 minExpectedPrice;
@@ -63,9 +62,10 @@ contract Locker {
         address priceFeed;
         uint256 balance;
     }
+
     modifier onlyConfigured(address _token) {
         require(
-            deposits[msg.sender][_token].token != address(0),
+            deposits[msg.sender][_token].lockForDays != 0,
             "Token not configured!"
         );
         _;
@@ -82,10 +82,11 @@ contract Locker {
         int256 _pricePrecision
     ) public {
         require(
-            deposits[msg.sender][_token].token == ZERO_ADDRESS,
+            deposits[msg.sender][_token].lockForDays == 0,
             "Token already configured!"
         );
         require(_minExpectedPrice >= 0, "Invalid minExpectedPrice value.");
+        require(_lockForDays > 0, "Invalid lockForDays value.");
 
         // check feed address interface
         if (_minExpectedPrice == 0) {
@@ -102,7 +103,6 @@ contract Locker {
         }
 
         DepositData memory newDeposit = DepositData({
-            token: _token,
             createdAt: block.timestamp,
             minExpectedPrice: _minExpectedPrice,
             pricePrecision: _pricePrecision,
@@ -142,9 +142,7 @@ contract Locker {
             return true;
         } else if (depositData.minExpectedPrice == 0) {
             return false;
-        } else if (
-            depositData.minExpectedPrice < getPrice(_account, _token)
-        ) {
+        } else if (depositData.minExpectedPrice < getPrice(_account, _token)) {
             return true;
         } else return false;
     }

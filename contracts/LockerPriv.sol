@@ -50,38 +50,41 @@ pragma solidity 0.8.17;
 
 contract LockerPriv {
     address public immutable owner = msg.sender;
-    uint256 public immutable createdAt = block.timestamp;
-    mapping(address => bool) public configuredTokens;
-    mapping(address => Token) public tokensData;
+    mapping(address => DepositData) public deposits;
     address[] public tokenAddresses;
 
-    struct Token {
+    struct DepositData {
         uint256 lockForDays;
         int256 minExpectedPrice;
         int256 pricePrecision;
         address priceFeed;
+        uint256 createdAt;
     }
 
     address private constant ZERO = address(0x0);
     string private constant ERRBADCONFIG = "Invalid price configuration";
-    string private constant ERRNOTCONFIGURED = "Token not configured";
+    string private constant ERRNOTCONFIGURED = "DepositData not configured";
 
     modifier restricted() {
         require(msg.sender == owner, "Access denied!");
         _;
     }
 
+    modifier onlyConfigured(address _token) {
+        require(deposits[_token].lockForDays != 0, "DepositData not configured!");
+        _;
+    }
+
     function configureToken(
-        address _tokenAddress,
+        address _token,
         uint256 _lockForDays,
         address _priceFeed,
         int256 _minExpectedPrice,
         int256 _pricePrecision
     ) external restricted {
         require(_lockForDays > 0, "Invalid lockForDays value.");
-        require(_lockForDays < 2000, "Too long lockup period!");
         require(_minExpectedPrice >= 0, "Invalid minExpectedPrice value.");
-        require(!configuredTokens[_tokenAddress], "Token already configured!");
+        require(deposits[_token].lockForDays == 0, "DepositData already configured!");
 
         if (_minExpectedPrice == 0) {
             require(_priceFeed == ZERO, ERRBADCONFIG);
@@ -91,25 +94,24 @@ contract LockerPriv {
             PriceFeedInterface(_priceFeed).latestRoundData();
         }
 
-        tokenAddresses.push(_tokenAddress);
+        tokenAddresses.push(_token);
 
-        Token memory newToken = Token({
+        DepositData memory newDepositData = DepositData({
             lockForDays: _lockForDays,
             minExpectedPrice: _minExpectedPrice,
             pricePrecision: _pricePrecision,
-            priceFeed: _priceFeed
+            priceFeed: _priceFeed,
+            createdAt: block.timestamp
         });
 
-        tokensData[_tokenAddress] = newToken;
-        configuredTokens[_tokenAddress] = true;
+        deposits[_token] = newDepositData;
     }
 
     function increaseMinExpectedPrice(
-        address _tokenAddress,
+        address _token,
         int256 _newMinExpectedPrice
-    ) external restricted {
-        require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
-        Token storage token = tokensData[_tokenAddress];
+    ) external restricted onlyConfigured(_token) {
+        DepositData storage token = deposits[_token];
 
         require(
             token.minExpectedPrice != 0,
@@ -125,11 +127,10 @@ contract LockerPriv {
     }
 
     function increaseLockForDays(
-        address _tokenAddress,
+        address _token,
         uint256 _newLockForDays
-    ) external restricted {
-        require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
-        Token storage token = tokensData[_tokenAddress];
+    ) external restricted onlyConfigured(_token) {
+        DepositData storage token = deposits[_token];
         require(
             token.lockForDays < _newLockForDays,
             "New lockForDays value invalid!"
@@ -137,9 +138,10 @@ contract LockerPriv {
         token.lockForDays = _newLockForDays;
     }
 
-    function getPrice(address _tokenAddress) public view returns (int256) {
-        require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
-        Token storage token = tokensData[_tokenAddress];
+    function getPrice(
+        address _token
+    ) public view onlyConfigured(_token) returns (int256) {
+        DepositData storage token = deposits[_token];
         if (token.priceFeed == ZERO) {
             return 0;
         }
@@ -149,17 +151,18 @@ contract LockerPriv {
         return price / token.pricePrecision;
     }
 
-    function canWithdraw(address _tokenAddress) public view returns (bool) {
-        require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
-        Token memory token = tokensData[_tokenAddress];
+    function canWithdraw(
+        address _token
+    ) public view onlyConfigured(_token) returns (bool) {
+        DepositData memory token = deposits[_token];
 
-        uint256 releaseAt = createdAt + (token.lockForDays * 1 days);
+        uint256 releaseAt = token.createdAt + (token.lockForDays * 1 days);
 
         if (releaseAt < block.timestamp) {
             return true;
         } else if (token.minExpectedPrice == 0) {
             return false;
-        } else if (token.minExpectedPrice < getPrice(_tokenAddress)) {
+        } else if (token.minExpectedPrice < getPrice(_token)) {
             return true;
         } else return false;
     }
@@ -177,43 +180,13 @@ contract LockerPriv {
         return tokenAddresses;
     }
 
-    function getLockForDaysDuration(
-        address _tokenAddress
-    ) external view returns (uint256) {
-        require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
-        Token memory token = tokensData[_tokenAddress];
-        return token.lockForDays;
-    }
+    function withdraw(address _token) external restricted {
+        require(canWithdraw(_token), "You cannot withdraw yet!");
 
-    function getPricePrecision(
-        address _tokenAddress
-    ) external view returns (int256) {
-        require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
-        Token memory token = tokensData[_tokenAddress];
-        return token.pricePrecision;
-    }
-
-    function getMinExpectedPrice(
-        address _tokenAddress
-    ) external view returns (int256) {
-        require(configuredTokens[_tokenAddress], ERRNOTCONFIGURED);
-        Token memory token = tokensData[_tokenAddress];
-        return token.minExpectedPrice;
-    }
-
-    function withdraw(address _tokenAddress) external restricted {
-        require(canWithdraw(_tokenAddress), "You cannot withdraw yet!");
-
-        if (_tokenAddress == ZERO) {
-            payable(owner).transfer(address(this).balance);
-        } else {
-            IERC20 erc20 = IERC20(_tokenAddress);
-            uint256 tokenBalance = erc20.balanceOf(address(this));
-            if (tokenBalance > 0) {
-                erc20.transfer(owner, tokenBalance);
-            }
+        IERC20 erc20 = IERC20(_token);
+        uint256 tokenBalance = erc20.balanceOf(address(this));
+        if (tokenBalance > 0) {
+            erc20.transfer(owner, tokenBalance);
         }
     }
-
-    receive() external payable {}
 }

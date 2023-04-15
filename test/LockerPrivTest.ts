@@ -18,7 +18,7 @@ describe("LockerPriv", () => {
   const lockForDays = 5
   let tokenA;
   let tokenETH;
-  let smartHold;
+  let locker;
   let priceFeed;
   let owner
   let notOwner
@@ -34,7 +34,7 @@ describe("LockerPriv", () => {
     const MockETHTokenB = await ethers.getContractFactory("MockETHTokenB");
 
     priceFeed = await PriceFeedMock.deploy(opts.currentPrice * 10e7)
-    smartHold = await LockerPriv.deploy()
+    locker = await LockerPriv.deploy()
     tokenA = await MockTokenA.connect(notOwner).deploy()
     tokenETH = await MockETHTokenB.connect(notOwner).deploy()
   }
@@ -56,157 +56,152 @@ describe("LockerPriv", () => {
   })
 
   it("can be deployed", async () => {
-    assert.ok(smartHold.address)
+    assert.ok(locker.address)
   })
 
-  it("can hold both ETH and ERC20 tokens", async () => {
-    await owner.sendTransaction({ value: value, to: smartHold.address })
+  it("can hold only ERC20 tokens", async () => {
+    await expectRevert(
+      owner.sendTransaction({ value: value, to: locker.address })
+    , "transaction may fail")
 
-    const balanceETH = await ethers.provider.getBalance(smartHold.address)
-    expect(balanceETH).to.equal(value)
-
-    await tokenA.connect(notOwner).transfer(smartHold.address, 250)
-    const balanceA = await tokenA.balanceOf(smartHold.address)
+    await tokenA.connect(notOwner).transfer(locker.address, 250)
+    const balanceA = await tokenA.balanceOf(locker.address)
     expect(balanceA).to.equal(250)
   })
 
   describe("'configureToken'", async () => {
     it("adds token data", async () => {
-      await smartHold.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
-      const lockTimeA = await smartHold.getLockForDaysDuration(tokenA.address)
-      const tokenAddressA = await smartHold.tokenAddresses(0)
+      await locker.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
+      const depositData = await locker.deposits(tokenA.address)
+      expect(depositData.lockForDays).to.equal(20)
+      const tokenAddressA = await locker.tokenAddresses(0)
       expect(tokenAddressA).to.equal(tokenA.address)
-      const pricePrecision = await smartHold.getPricePrecision(tokenA.address)
-      expect(pricePrecision).to.equal(10e7)
+      expect(depositData.pricePrecision).to.equal(10e7)
 
-      const count = (await smartHold.getConfiguredTokens()).length
+      const count = (await locker.getConfiguredTokens()).length
       expect(count).to.equal(1)
-
-      await expectRevert(
-        smartHold.getLockForDaysDuration(tokenETH.address)
-      , "not configured")
     })
 
     it("does not allow adding token more than once", async () => {
-      await smartHold.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
+      await locker.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
 
       await expectRevert(
-        smartHold.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
+        locker.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
       , "already configured")
     })
 
     it("raises an error for invalid price feed addresses", async () => {
       await expectRevert(
-        smartHold.configureToken(tokenA.address, 20, tokenA.address, 150, 10e7)
+        locker.configureToken(tokenA.address, 20, tokenA.address, 150, 10e7)
       , "revert")
     })
 
     it("enables 'getPrice' for a given token and saves minimumExpectedPrice", async () => {
-      await smartHold.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
-      const expectedPriceA = await smartHold.getMinExpectedPrice(tokenA.address)
+      await locker.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
+      const expectedPriceA = (await locker.deposits(tokenA.address)).minExpectedPrice
       expect(expectedPriceA).to.equal(150)
 
-      const currentPriceA = await smartHold.getPrice(tokenA.address)
+      const currentPriceA = await locker.getPrice(tokenA.address)
       expect(currentPriceA).to.equal(100)
 
       await expectRevert(
-        smartHold.getPrice(tokenETH.address)
+        locker.getPrice(tokenETH.address)
       , "not configured")
     })
 
     it("checks that ignoring the minimum price is correctly configured", async () => {
       await expectRevert(
-        smartHold.configureToken(tokenA.address, 20, priceFeed.address, 0, 10e7)
+        locker.configureToken(tokenA.address, 20, priceFeed.address, 0, 10e7)
       , "Invalid")
     })
 
     it("does not allow setting negative expected price", async () => {
       await expectRevert(
-        smartHold.configureToken(tokenA.address, 20, priceFeed.address, -10, 10e7)
+        locker.configureToken(tokenA.address, 20, priceFeed.address, -10, 10e7)
       , "Invalid")
     })
   })
 
   describe("'increaseMinExpectedPrice'", async () => {
     beforeEach(async() => {
-      await smartHold.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
+      await locker.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
     })
 
     it("cannot be executed by non owner account", async () => {
       await expectRevert(
-        smartHold.connect(notOwner).increaseMinExpectedPrice(tokenA.address, 50)
+        locker.connect(notOwner).increaseMinExpectedPrice(tokenA.address, 50)
       , "Access denied")
     })
 
     it("raises an error for not configured tokens", async () => {
       await expectRevert(
-        smartHold.increaseMinExpectedPrice(tokenETH.address, 25)
+        locker.increaseMinExpectedPrice(tokenETH.address, 25)
       , "not configured")
     })
 
     it("does not allow decreasing the expected price", async () => {
       await expectRevert(
-        smartHold.increaseMinExpectedPrice(tokenA.address, 120)
+        locker.increaseMinExpectedPrice(tokenA.address, 120)
       , "invalid")
     })
 
     it("allows increasing the min expected price", async () => {
-      await smartHold.increaseMinExpectedPrice(tokenA.address, 170)
-      const newPrice = await smartHold.getMinExpectedPrice(tokenA.address)
+      await locker.increaseMinExpectedPrice(tokenA.address, 170)
+      const newPrice = (await locker.deposits(tokenA.address)).minExpectedPrice
       expect(newPrice).to.equal(170)
     })
 
     it("does not allow changing price if previously set to 0", async () => {
-      await smartHold.configureToken(tokenETH.address, 10, constants.ZERO_ADDRESS, 0, 10e7)
+      await locker.configureToken(tokenETH.address, 10, constants.ZERO_ADDRESS, 0, 10e7)
 
       await expectRevert(
-        smartHold.increaseMinExpectedPrice(tokenETH.address, 20)
+        locker.increaseMinExpectedPrice(tokenETH.address, 20)
       , "not configured")
     })
   })
 
   describe("'increaseLockForDays'", async () => {
     beforeEach(async() => {
-      await smartHold.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
+      await locker.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
     })
 
     it("cannot be executed by non owner account", async () => {
       await expectRevert(
-        smartHold.connect(notOwner).increaseLockForDays(tokenA.address, 25)
+        locker.connect(notOwner).increaseLockForDays(tokenA.address, 25)
       , "Access denied")
     })
 
     it("raises an error for not configured tokens", async () => {
       await expectRevert(
-        smartHold.increaseLockForDays(tokenETH.address, 25)
+        locker.increaseLockForDays(tokenETH.address, 25)
       , "not configured")
     })
 
     it("does not allow decreasing the lock duration", async () => {
       await expectRevert(
-        smartHold.increaseLockForDays(tokenA.address, 15)
+        locker.increaseLockForDays(tokenA.address, 15)
       , "invalid")
     })
 
     it("allows increasing the lock duration", async () => {
-      await smartHold.increaseLockForDays(tokenA.address, 25)
-      const newPrice = await smartHold.getLockForDaysDuration(tokenA.address)
-      expect(newPrice).to.equal(25)
+      await locker.increaseLockForDays(tokenA.address, 25)
+      const newDuration = (await locker.deposits(tokenA.address)).lockForDays
+      expect(newDuration).to.equal(25)
     })
   })
 
   describe("'checkPriceFeed'", async () => {
     it("returns current price for valid price feeds", async () => {
-      const priceInDollars = await smartHold.checkPriceFeed(priceFeed.address, 10e7)
+      const priceInDollars = await locker.checkPriceFeed(priceFeed.address, 10e7)
       expect(priceInDollars).to.equal(100)
 
-      const priceInCents = await smartHold.checkPriceFeed(priceFeed.address, 10e5)
+      const priceInCents = await locker.checkPriceFeed(priceFeed.address, 10e5)
       expect(priceInCents).to.equal(10000)
     })
 
     it("raises an error for invalid price feed addresses", async () => {
       await expectRevert(
-        smartHold.checkPriceFeed(tokenA.address, 10e7),
+        locker.checkPriceFeed(tokenA.address, 10e7),
         "revert"
       )
     })
@@ -215,18 +210,18 @@ describe("LockerPriv", () => {
   describe("'canWithdraw'", async () => {
     it("token was not configured it raises an error", async () => {
       await expectRevert(
-        smartHold.canWithdraw(tokenA.address)
+        locker.canWithdraw(tokenA.address)
       , "not configured")
 
-      await smartHold.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
-      const result = await smartHold.canWithdraw(tokenA.address)
+      await locker.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
+      const result = await locker.canWithdraw(tokenA.address)
       expect(result).to.equal(false)
     })
 
     it("time for holding the token has passed it returns true", async () => {
-      await smartHold.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
+      await locker.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
       await advanceByDays(21)
-      const result = await smartHold.canWithdraw(tokenA.address)
+      const result = await locker.canWithdraw(tokenA.address)
       expect(result).to.equal(true)
     })
 
@@ -238,20 +233,20 @@ describe("LockerPriv", () => {
       })
 
       it("minimumExpectedPrice has been configured and is lower than the current price it returns true", async () => {
-        await smartHold.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
-        const result = await smartHold.canWithdraw(tokenA.address)
+        await locker.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
+        const result = await locker.canWithdraw(tokenA.address)
         expect(result).to.equal(true)
       })
 
       it("minimumExpectedPrice has been configured and is higher than the current price it returns false", async () => {
-        await smartHold.configureToken(tokenA.address, 20, priceFeed.address, 210, 10e7)
-        const result = await smartHold.canWithdraw(tokenA.address)
+        await locker.configureToken(tokenA.address, 20, priceFeed.address, 210, 10e7)
+        const result = await locker.canWithdraw(tokenA.address)
         expect(result).to.equal(false)
       })
 
       it("minimumExpectedPrice has not been configured it returns false", async () => {
-        await smartHold.configureToken(tokenA.address, 20, constants.ZERO_ADDRESS, 0, 10e7)
-        const result = await smartHold.canWithdraw(tokenA.address)
+        await locker.configureToken(tokenA.address, 20, constants.ZERO_ADDRESS, 0, 10e7)
+        const result = await locker.canWithdraw(tokenA.address)
         expect(result).to.equal(false)
       })
     })
@@ -259,10 +254,10 @@ describe("LockerPriv", () => {
 
   describe("'getConfiguredTokens'", async () => {
     it("returns array of token addresses", async () => {
-      await smartHold.configureToken(tokenA.address, 20, priceFeed.address, 120, 10e7)
-      await smartHold.configureToken(tokenETH.address, 20, constants.ZERO_ADDRESS, 0, 10e7)
+      await locker.configureToken(tokenA.address, 20, priceFeed.address, 120, 10e7)
+      await locker.configureToken(tokenETH.address, 20, constants.ZERO_ADDRESS, 0, 10e7)
 
-      const tokens = await smartHold.getConfiguredTokens()
+      const tokens = await locker.getConfiguredTokens()
       expect(tokens[0]).to.equal(tokenA.address)
       expect(tokens[1]).to.equal(tokenETH.address)
       expect(tokens.length).to.equal(2)
@@ -271,44 +266,32 @@ describe("LockerPriv", () => {
 
   describe("'withdraw'", async () => {
     beforeEach(async() => {
-      await smartHold.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
+      await locker.configureToken(tokenA.address, 20, priceFeed.address, 150, 10e7)
     })
 
     it("cannot be executed by non owner account", async () => {
       await expectRevert(
-        smartHold.connect(notOwner).withdraw(tokenA.address)
+        locker.connect(notOwner).withdraw(tokenA.address)
       , "Access denied")
     })
 
     it("raises an error if conditions are not fulfilled", async () => {
       await expectRevert(
-        smartHold.withdraw(tokenA.address)
+        locker.withdraw(tokenA.address)
       , "cannot withdraw")
     })
 
     it("sends ERC20 tokens to owner account if conditions are fulfilled", async () => {
       const balanceBefore = await tokenA.balanceOf(owner.address)
       expect(balanceBefore).to.equal(0)
-      await tokenA.connect(notOwner).transfer(smartHold.address, 500)
+      await tokenA.connect(notOwner).transfer(locker.address, 500)
 
       await advanceByDays(21)
 
-      await smartHold.withdraw(tokenA.address)
+      await locker.withdraw(tokenA.address)
       const balanceAfter = await tokenA.balanceOf(owner.address)
 
       expect(balanceAfter).to.equal(500)
-    })
-
-    it("sends ETH tokens to owner account if conditions are fulfilled", async () => {
-      await smartHold.configureToken(constants.ZERO_ADDRESS, 20, priceFeed.address, 150, 10e7)
-      await notOwner.sendTransaction({ value: value, to: smartHold.address })
-
-      await advanceByDays(21)
-
-      await expect(smartHold.withdraw(constants.ZERO_ADDRESS)).to.changeEtherBalances(
-        [owner, smartHold],
-        [value, value.mul(-1)]
-      );
     })
   })
 })

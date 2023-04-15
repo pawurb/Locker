@@ -50,7 +50,6 @@ contract LockerETH {
         require(deposits[msg.sender].createdAt == 0, ERRALREADYCONFIGURED);
 
         require(_minExpectedPrice >= 0, "Invalid minExpectedPrice value.");
-        require(_lockForDays < 10000, "Too long lockup period!");
 
         depositors.push(msg.sender);
 

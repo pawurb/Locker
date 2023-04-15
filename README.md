@@ -12,6 +12,8 @@ This smart contract allows users to deposit ERC20 tokens and lock them for a cer
 
 **Do not send any ERC20 tokens directly to this contract or they will be lost!!**
 
+**Do not use this contract for storing rebasing tokens like stETH!! Stored balance is determined once when depositing the token. It means that rebased reward will get stuck in the contract forever.**
+
 ### API
 
 Each user account can configure any number of distinct ERC20 tokens. But, you cannot configure different time/price conditions for the same ERC20 token and account. To do it you have to use a different account.
@@ -216,7 +218,9 @@ You can send more Ether to the contract after it has been initialized. Only make
 
 ## LockerPriv.sol
 
-This contract can hold both ERC20 and ETH tokens. You can use the contract in the following way:
+This contract can hold ERC20 tokens but is accessible only by an account that deployed it. You can use it to store rebasing tokens like `stETH` because total token balance is released when withdrawing the deposit.
+
+You can use the contract in the following way:
 
 ```node
 const locker = await LockerPriv.new()
