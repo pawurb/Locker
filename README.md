@@ -10,7 +10,7 @@
 
 This smart contract allows users to deposit ERC20 tokens and lock them for a certain period of time. Optionally, you can configure a minimum USD price that will release tokens before the time has passed.
 
-**Do not send any ERC20 tokens directly to this contract or they will be lost!!**
+**Do not send any ERC20 tokens directly to this contract or they will be lost!!** You have to use a dedicated `deposit` method.
 
 **Do not use this contract for storing rebasing tokens like stETH!! Stored balance is determined once when depositing the token. It means that rebased reward will get stuck in the contract forever.**
 
@@ -270,6 +270,25 @@ If the above method returns `true`, you can withdraw a selected token using:
 * `_tokenAddress` - `[address]` address of a token
 
 Tokens will be returned to the address of a contract maker.
+
+## LockerETHPriv.sol
+
+LockerETHPriv is a smart contract that allows users to lock their Ethereum (ETH) for a specific period of time. The smart contract supports two withdrawal conditions:
+
+- The lockup period has expired.
+- The current ETH price is greater than or equal to a specified minimum price.
+
+The smart contract constructor takes in three parameters:
+
+* `_priceFeed`: The address of an external smart contract that provides ETH price feed.
+* `_lockForDays`: The number of days to lock the deposited ETH.
+* `_minimumPrice`: The minimum ETH price required to withdraw.
+
+### API
+
+`withdraw()` - Withdraws the deposited ETH if the withdrawal conditions are met.
+`canWithdraw() returns (bool)` - Checks if the withdrawal conditions are met. Returns `true` if the withdrawal conditions are met; otherwise, `false`.
+
 
 ## Price feeds
 
