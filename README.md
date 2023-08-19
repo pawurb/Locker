@@ -1,4 +1,4 @@
-# Locker - provides a way to lock and hold your ETH or ERC20 in a smart contract [![CircleCI](https://circleci.com/gh/pawurb/Locker.svg?style=svg)](https://circleci.com/gh/pawurb/Locker)
+# Locker - provides a way to lock and hold your ETH or ERC20 in a smart contract [![GH Actions](https://github.com/pawurb/Locker/actions/workflows/ci.yml/badge.svg)](https://github.com/pawurb/Locker/actions)
 
 **This is a BETA software that has not been audited for security. Incorrectly using these smart contracts can result in irreversible loss of your funds. USE AT YOUR OWN RISK!**
 

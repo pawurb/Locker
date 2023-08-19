@@ -1,0 +1,24 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+      - run: npm i
+      - run: npm i ganache --global
+      - name: Run Linter
+        run: npm run lint
+      - name: Run Compile
+        run: npx hardhat compile
+      - name: Run node and tests
+        run: ganache & sleep 25 && npx hardhat test
