@@ -48,7 +48,7 @@ interface PriceFeedInterface {
 
 pragma solidity 0.8.17;
 
-contract Locker {
+contract ERC20Locker {
     mapping(address => mapping(address => DepositData)) public deposits;
     address[] public depositors;
     mapping(address => bool) private isDepositor;

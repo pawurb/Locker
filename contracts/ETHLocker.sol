@@ -17,7 +17,7 @@ interface PriceFeedInterface {
 
 pragma solidity 0.8.17;
 
-contract LockerETH {
+contract ETHLocker{
     PriceFeedInterface internal priceFeed;
     mapping(address => DepositData) public deposits;
     address[] public depositors;

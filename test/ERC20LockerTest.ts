@@ -13,7 +13,7 @@ const advanceByDays = async (days) => {
   await time.increase(days * 86400)
 }
 
-describe("Locker", () => {
+describe("ERC20Locker", () => {
   const value = ethers.utils.parseEther("1")
   const lockForDays = 5
   let tokenA;
@@ -29,12 +29,12 @@ describe("Locker", () => {
     opts.priceFeedContract = opts.priceFeedContract || "PriceFeedMock"
 
     const PriceFeedMock = await ethers.getContractFactory(opts.priceFeedContract);
-    const Locker = await ethers.getContractFactory("Locker");
+    const ERC20Locker = await ethers.getContractFactory("ERC20Locker");
     const MockTokenA = await ethers.getContractFactory("MockTokenA");
     const MockETHTokenB = await ethers.getContractFactory("MockETHTokenB");
 
     priceFeed = await PriceFeedMock.deploy(opts.currentPrice * 10e7)
-    locker = await Locker.deploy()
+    locker = await ERC20Locker.deploy()
     tokenA = await MockTokenA.deploy()
     tokenETH = await MockETHTokenB.deploy()
   }

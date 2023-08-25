@@ -15,7 +15,7 @@ const advanceByDays = async (days) => {
 
 const oneEther = ethers.utils.parseEther("1.00")
 
-describe("LockerETH", () => {
+describe("ETHLocker", () => {
   let smartHold;
   let priceFeed;
   let user1
@@ -30,9 +30,9 @@ describe("LockerETH", () => {
     user2 = (await ethers.getSigners())[1]
 
     const PriceFeedMock = await ethers.getContractFactory(opts.priceFeedContract);
-    const LockerETH = await ethers.getContractFactory("LockerETH");
+    const ETHLocker = await ethers.getContractFactory("ETHLocker");
     priceFeed = await PriceFeedMock.deploy(opts.currentPrice * 10e7)
-    smartHold = await LockerETH.deploy(
+    smartHold = await ETHLocker.deploy(
       priceFeed.address,
       {
         value: opts.constructorValue

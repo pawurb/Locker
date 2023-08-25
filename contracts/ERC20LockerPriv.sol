@@ -48,7 +48,7 @@ interface PriceFeedInterface {
 
 pragma solidity 0.8.17;
 
-contract LockerPriv {
+contract ERC20LockerPriv {
     address public immutable owner = msg.sender;
     mapping(address => DepositData) public deposits;
     address[] public tokenAddresses;

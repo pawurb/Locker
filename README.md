@@ -6,7 +6,7 @@
 
 [Story of the project](https://pawelurbanek.com/smart-contract-development)
 
-## Locker.sol
+## ERC20Locker.sol
 
 This smart contract allows users to deposit ERC20 tokens and lock them for a certain period of time. Optionally, you can configure a minimum USD price that will release tokens before the time has passed.
 
@@ -190,12 +190,12 @@ mapping(address => mapping(address => DepositData)) deposits;
 
 A nested hash representing configuration of all stored tokens. You can use it to read ERC20 token configuration based on account and token address.
 
-## LockerETH.sol
+## ETHLocker.sol
 
-The `LockerETH` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure an ETH/USD price value that will release the Ether. You need to deploy the contract with the following arguments:
+The `ETHLocker` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure an ETH/USD price value that will release the Ether. You need to deploy the contract with the following arguments:
 
 ```node
-const deposit = await LockerETH.new(
+const deposit = await ETHLocker.new(
   0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419,
   750,
   10000
@@ -216,14 +216,14 @@ const deposit = await LockerETH.new(
 
 You can send more Ether to the contract after it has been initialized. Only maker of the contract can withdraw the funds. Don't send ERC20 tokens to this contract because they will be stuck forever.
 
-## LockerPriv.sol
+## ERC20LockerPriv.sol
 
 This contract can hold ERC20 tokens but is accessible only by an account that deployed it. You can use it to store rebasing tokens like `stETH` because total token balance is released when withdrawing the deposit.
 
 You can use the contract in the following way:
 
 ```node
-const locker = await LockerPriv.new()
+const locker = await ERC20LockerPriv.new()
 await locker.configureToken(
   0x0d8775f648430679a709e98d2b0cb6250d2887ef,
   750,
@@ -271,9 +271,9 @@ If the above method returns `true`, you can withdraw a selected token using:
 
 Tokens will be returned to the address of a contract maker.
 
-## LockerETHPriv.sol
+## ETHLockerPriv.sol
 
-LockerETHPriv is a smart contract that allows users to lock their Ethereum (ETH) for a specific period of time. The smart contract supports two withdrawal conditions:
+ETHLockerPriv is a smart contract that allows users to lock their Ethereum (ETH) for a specific period of time. The smart contract supports two withdrawal conditions:
 
 - The lockup period has expired.
 - The current ETH price is greater than or equal to a specified minimum price.
