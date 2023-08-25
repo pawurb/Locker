@@ -30,13 +30,13 @@ describe("ERC20Locker", () => {
 
     const PriceFeedMock = await ethers.getContractFactory(opts.priceFeedContract);
     const ERC20Locker = await ethers.getContractFactory("ERC20Locker");
-    const MockTokenA = await ethers.getContractFactory("MockTokenA");
-    const MockETHTokenB = await ethers.getContractFactory("MockETHTokenB");
+    const MockERC20A = await ethers.getContractFactory("MockERC20A");
+    const MockERC20B = await ethers.getContractFactory("MockERC20B");
 
     priceFeed = await PriceFeedMock.deploy(opts.currentPrice * 10e7)
     locker = await ERC20Locker.deploy()
-    tokenA = await MockTokenA.deploy()
-    tokenETH = await MockETHTokenB.deploy()
+    tokenA = await MockERC20A.deploy()
+    tokenETH = await MockERC20B.deploy()
   }
 
   beforeEach(async () => {
