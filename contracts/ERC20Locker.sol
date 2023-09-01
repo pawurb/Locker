@@ -63,9 +63,9 @@ contract ERC20Locker {
         uint256 balance;
     }
 
-    modifier onlyConfigured(address _token) {
+    modifier onlyConfigured(address _account, address _token) {
         require(
-            deposits[msg.sender][_token].lockForDays != 0,
+            deposits[_account][_token].lockForDays != 0,
             "Token not configured!"
         );
         _;
@@ -122,7 +122,7 @@ contract ERC20Locker {
     function deposit(
         address _token,
         uint256 _amount
-    ) external onlyConfigured(_token) {
+    ) external onlyConfigured(msg.sender, _token) {
         DepositData storage depositData = deposits[msg.sender][_token];
 
         IERC20(_token).transferFrom(msg.sender, address(this), _amount);
@@ -132,7 +132,7 @@ contract ERC20Locker {
     function canWithdraw(
         address _account,
         address _token
-    ) public view onlyConfigured(_token) returns (bool) {
+    ) public view onlyConfigured(_account, _token) returns (bool) {
         DepositData memory depositData = deposits[_account][_token];
 
         uint256 releaseAt = depositData.createdAt +
@@ -147,7 +147,7 @@ contract ERC20Locker {
         } else return false;
     }
 
-    function withdraw(address _token) external onlyConfigured(_token) {
+    function withdraw(address _token) external onlyConfigured(msg.sender, _token) {
         require(canWithdraw(msg.sender, _token), "You cannot withdraw yet!");
 
         DepositData storage depositData = deposits[msg.sender][_token];
@@ -160,7 +160,7 @@ contract ERC20Locker {
     function increaseMinExpectedPrice(
         address _token,
         int256 _newMinExpectedPrice
-    ) external onlyConfigured(_token) {
+    ) external onlyConfigured(msg.sender, _token) {
         DepositData storage depositData = deposits[msg.sender][_token];
 
         require(
@@ -179,7 +179,7 @@ contract ERC20Locker {
     function increaseLockForDays(
         address _token,
         uint256 _newLockForDays
-    ) external onlyConfigured(_token) {
+    ) external onlyConfigured(msg.sender, _token) {
         DepositData storage depositData = deposits[msg.sender][_token];
 
         require(
@@ -202,7 +202,7 @@ contract ERC20Locker {
     function getPrice(
         address _account,
         address _token
-    ) public view onlyConfigured(_token) returns (int256) {
+    ) public view onlyConfigured(_account, _token) returns (int256) {
         DepositData memory depositData = deposits[_account][_token];
 
         if (depositData.priceFeed == ZERO_ADDRESS) {

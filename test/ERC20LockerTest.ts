@@ -174,7 +174,7 @@ describe("ERC20Locker", () => {
     it("time for holding the token has passed it returns true", async () => {
       await locker.configureDepositWithPrice(tokenA.address, 20, priceFeed.address, 150, 10e7)
       await advanceByDays(21)
-      const result = await locker.canWithdraw(user1.address, tokenA.address)
+      const result = await locker.connect(user2).canWithdraw(user1.address, tokenA.address)
       expect(result).to.equal(true)
     })
 
