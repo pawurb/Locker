@@ -17,7 +17,7 @@ describe("ERC20LockerPriv", () => {
   const value = ethers.utils.parseEther("1")
   const lockForDays = 5
   let tokenA;
-  let tokenETH;
+  let tokenB;
   let locker;
   let priceFeed;
   let owner
@@ -36,7 +36,7 @@ describe("ERC20LockerPriv", () => {
     priceFeed = await PriceFeedMock.deploy(opts.currentPrice * 10e7)
     locker = await ERC20LockerPriv.deploy()
     tokenA = await MockERC20A.connect(notOwner).deploy()
-    tokenETH = await MockERC20B.connect(notOwner).deploy()
+    tokenB = await MockERC20B.connect(notOwner).deploy()
   }
 
   beforeEach(async () => {
@@ -50,7 +50,7 @@ describe("ERC20LockerPriv", () => {
       const balanceA = await tokenA.balanceOf(notOwner.address)
       expect(balanceA).to.equal(1000)
 
-      const balanceB = await tokenETH.balanceOf(notOwner.address)
+      const balanceB = await tokenB.balanceOf(notOwner.address)
       expect(balanceB).to.equal(2000)
     })
   })
@@ -105,7 +105,7 @@ describe("ERC20LockerPriv", () => {
       expect(currentPriceA).to.equal(100)
 
       await expectRevert(
-        locker.getPrice(tokenETH.address)
+        locker.getPrice(tokenB.address)
       , "not configured")
     })
 
@@ -135,7 +135,7 @@ describe("ERC20LockerPriv", () => {
 
     it("raises an error for not configured tokens", async () => {
       await expectRevert(
-        locker.increaseMinExpectedPrice(tokenETH.address, 25)
+        locker.increaseMinExpectedPrice(tokenB.address, 25)
       , "not configured")
     })
 
@@ -152,10 +152,10 @@ describe("ERC20LockerPriv", () => {
     })
 
     it("does not allow changing price if previously set to 0", async () => {
-      await locker.configureToken(tokenETH.address, 10, constants.ZERO_ADDRESS, 0, 10e7)
+      await locker.configureToken(tokenB.address, 10, constants.ZERO_ADDRESS, 0, 10e7)
 
       await expectRevert(
-        locker.increaseMinExpectedPrice(tokenETH.address, 20)
+        locker.increaseMinExpectedPrice(tokenB.address, 20)
       , "not configured")
     })
   })
@@ -173,7 +173,7 @@ describe("ERC20LockerPriv", () => {
 
     it("raises an error for not configured tokens", async () => {
       await expectRevert(
-        locker.increaseLockForDays(tokenETH.address, 25)
+        locker.increaseLockForDays(tokenB.address, 25)
       , "not configured")
     })
 
@@ -255,11 +255,11 @@ describe("ERC20LockerPriv", () => {
   describe("'getConfiguredTokens'", async () => {
     it("returns array of token addresses", async () => {
       await locker.configureToken(tokenA.address, 20, priceFeed.address, 120, 10e7)
-      await locker.configureToken(tokenETH.address, 20, constants.ZERO_ADDRESS, 0, 10e7)
+      await locker.configureToken(tokenB.address, 20, constants.ZERO_ADDRESS, 0, 10e7)
 
       const tokens = await locker.getConfiguredTokens()
       expect(tokens[0]).to.equal(tokenA.address)
-      expect(tokens[1]).to.equal(tokenETH.address)
+      expect(tokens[1]).to.equal(tokenB.address)
       expect(tokens.length).to.equal(2)
     })
   })
