@@ -147,7 +147,9 @@ contract ERC20Locker {
         } else return false;
     }
 
-    function withdraw(address _token) external onlyConfigured(msg.sender, _token) {
+    function withdraw(
+        address _token
+    ) external onlyConfigured(msg.sender, _token) {
         require(canWithdraw(msg.sender, _token), "You cannot withdraw yet!");
 
         DepositData storage depositData = deposits[msg.sender][_token];

@@ -71,7 +71,10 @@ contract ERC20LockerPriv {
     }
 
     modifier onlyConfigured(address _token) {
-        require(deposits[_token].lockForDays != 0, "DepositData not configured!");
+        require(
+            deposits[_token].lockForDays != 0,
+            "DepositData not configured!"
+        );
         _;
     }
 
@@ -84,7 +87,10 @@ contract ERC20LockerPriv {
     ) external restricted {
         require(_lockForDays > 0, "Invalid lockForDays value.");
         require(_minExpectedPrice >= 0, "Invalid minExpectedPrice value.");
-        require(deposits[_token].lockForDays == 0, "DepositData already configured!");
+        require(
+            deposits[_token].lockForDays == 0,
+            "DepositData already configured!"
+        );
 
         if (_minExpectedPrice == 0) {
             require(_priceFeed == ZERO, ERRBADCONFIG);
