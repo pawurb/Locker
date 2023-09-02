@@ -1,4 +1,4 @@
-# Locker - provides a way to lock and hold your ETH or ERC20 in a smart contract
+# Locker - provides a way to lock and hold your ETH, ERC20 or ERC721 in a smart contract
 
 **This is a BETA software that has not been audited for security. Incorrectly using these smart contracts can result in irreversible loss of your funds. USE AT YOUR OWN RISK!**
 
@@ -27,7 +27,7 @@ function configureDeposit(
 )
 ```
 
-This function is used to configure a deposit without a minimum expected price for a specific token. It means that token will can released only after the configured time period has passed.
+This function is used to configure a deposit without a minimum expected price for a specific token. It means that token will be released only after the configured time period has passed.
 
 **Arguments:**
 
@@ -215,6 +215,73 @@ const deposit = await ETHLocker.new(
 `withdraw()` - withdraw funds to the contract maker address
 
 You can send more Ether to the contract after it has been initialized. Only maker of the contract can withdraw the funds. Don't send ERC20 tokens to this contract because they will be stuck forever.
+
+## NFTLocker.sol
+
+The NFTLocker smart contract is designed to allow users to lock and manage their non-fungible tokens (NFTs) for a specified period of time. Users can deposit their NFTs into the contract, set a lock duration, and then withdraw them only after the lock period has expired. This contract provides a way to hold NFTs temporarily and ensure they cannot be withdrawn until the specified time has passed.
+
+### API
+
+Each user account can configure any number of distinct ERC721 token instances.
+
+#### `deposit`
+
+```solidity
+function deposit(
+    address _token,
+    uint256 _tokenId,
+    uint256 _lockForDays
+)
+```
+
+Allows users to deposit an NFT into the contract. Target token will be released only after the configured time period has passed.
+
+**Arguments:**
+
+* `_token`: Address of ERC721 token to be configured.
+* `_tokenId`: ID of target NFT instance to be configured.
+* `_lockForDays`: The number of days the tokens will be locked.
+
+Before configuring the ERC721 token instance conditions you have to approve `Locker` contract to transfer it from your account. To do it you have to make the following method call:
+
+```solidity
+  ERC721(tokenAddress).approve(lockerAddress, tokenId);
+```
+
+#### `canWithdraw`
+
+```solidity
+function canWithdraw(
+    address _account,
+    address _token,
+    uint256 _tokenId
+) returns (bool)
+```
+
+Checks if a user can withdraw a specific NFT.
+
+#### `canWithdraw`
+
+```solidity
+function withdraw(
+    address _token,
+    uint256 _tokenId
+)
+```
+
+Allows users to withdraw an NFT that has reached its lock duration and transfers the NFT back to the user.
+
+#### `increaseLockForDays`
+
+```solidity
+function increaseLockForDays(
+  address _token,
+  uint256 _tokenId,
+  int256 _newLockForDays
+)
+```
+
+Allows users to increase the lock duration for a previously deposited NFT.
 
 ## ERC20LockerPriv.sol
 

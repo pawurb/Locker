@@ -45,7 +45,7 @@ describe("ERC20Locker", () => {
     )
   })
 
-  describe("tokens", async () => {
+  describe("mock ERC20 tokens", async () => {
     it("are correctly created", async () => {
       const balanceA = await tokenA.balanceOf(user1.address)
       expect(balanceA).to.equal(1000)
@@ -378,7 +378,7 @@ describe("ERC20Locker", () => {
   })
 
   describe("'getDepositors'", async () => {
-    it("returns array of configured addresses", async () => {
+    it("returns array of configured account addresses", async () => {
       await locker.configureDepositWithPrice(tokenA.address, 20, priceFeed.address, 150, 10e7)
       await locker.connect(user2).configureDepositWithPrice(tokenA.address, 20, priceFeed.address, 150, 10e7)
 
