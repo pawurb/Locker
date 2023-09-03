@@ -48,13 +48,18 @@ interface PriceFeedInterface {
 
 pragma solidity 0.8.17;
 
+import "./LockerPass.sol";
+
+contract ERC20LockerPass is LockerPass {
+    constructor(address _owner) LockerPass(_owner, "ERC20LockerPass", "LOP") {}
+}
+
 contract ERC20Locker {
-    mapping(address => mapping(address => DepositData)) public deposits;
-    address[] public depositors;
-    mapping(address => bool) private isDepositor;
-    mapping(address => address[]) public configuredTokens;
+    mapping(uint256 => DepositData) public deposits;
+    ERC20LockerPass public lockerPass;
 
     struct DepositData {
+        address token;
         uint256 createdAt;
         uint256 lockForDays;
         int256 minExpectedPrice;
@@ -63,16 +68,24 @@ contract ERC20Locker {
         uint256 balance;
     }
 
-    modifier onlyConfigured(address _account, address _token) {
-        require(
-            deposits[_account][_token].lockForDays != 0,
-            "Token not configured!"
-        );
+    modifier onlyDepositOwner(address _account, uint256 _depositId) {
+        require(lockerPass.ownerOf(_depositId) == _account, "Access denied");
+        require(deposits[_depositId].createdAt != 0, ERRNOTCONFIGURED);
+        _;
+    }
+
+    modifier onlyConfigured(uint256 _depositId) {
+        require(deposits[_depositId].createdAt != 0, ERRNOTCONFIGURED);
         _;
     }
 
     address private constant ZERO_ADDRESS = address(0x0);
     string private constant ERRBADCONFIG = "Invalid price configuration";
+    string private constant ERRNOTCONFIGURED = "Deposit not configured.";
+
+    constructor() {
+        lockerPass = new ERC20LockerPass(address(this));
+    }
 
     function configureDepositWithPrice(
         address _token,
@@ -81,10 +94,6 @@ contract ERC20Locker {
         int256 _minExpectedPrice,
         int256 _pricePrecision
     ) public {
-        require(
-            deposits[msg.sender][_token].lockForDays == 0,
-            "Token already configured!"
-        );
         require(_minExpectedPrice >= 0, "Invalid minExpectedPrice value.");
         require(_lockForDays > 0, "Invalid lockForDays value.");
 
@@ -97,12 +106,8 @@ contract ERC20Locker {
             PriceFeedInterface(_priceFeed).latestRoundData();
         }
 
-        if (isDepositor[msg.sender] == false) {
-            depositors.push(msg.sender);
-            isDepositor[msg.sender] = true;
-        }
-
         DepositData memory newDeposit = DepositData({
+            token: _token,
             createdAt: block.timestamp,
             minExpectedPrice: _minExpectedPrice,
             pricePrecision: _pricePrecision,
@@ -111,8 +116,9 @@ contract ERC20Locker {
             lockForDays: _lockForDays
         });
 
-        configuredTokens[msg.sender].push(_token);
-        deposits[msg.sender][_token] = newDeposit;
+        uint256 newDepositId = lockerPass.nextId();
+        lockerPass.mint(msg.sender);
+        deposits[newDepositId] = newDeposit;
     }
 
     function configureDeposit(address _token, uint256 _lockForDays) external {
@@ -121,19 +127,19 @@ contract ERC20Locker {
 
     function deposit(
         address _token,
-        uint256 _amount
-    ) external onlyConfigured(msg.sender, _token) {
-        DepositData storage depositData = deposits[msg.sender][_token];
+        uint256 _amount,
+        uint256 _depositId
+    ) external onlyDepositOwner(msg.sender, _depositId) {
+        DepositData storage depositData = deposits[_depositId];
 
         IERC20(_token).transferFrom(msg.sender, address(this), _amount);
         depositData.balance = depositData.balance + _amount;
     }
 
     function canWithdraw(
-        address _account,
-        address _token
-    ) public view onlyConfigured(_account, _token) returns (bool) {
-        DepositData memory depositData = deposits[_account][_token];
+        uint256 _depositId
+    ) public view onlyConfigured(_depositId) returns (bool) {
+        DepositData memory depositData = deposits[_depositId];
 
         uint256 releaseAt = depositData.createdAt +
             (depositData.lockForDays * 1 days);
@@ -142,28 +148,30 @@ contract ERC20Locker {
             return true;
         } else if (depositData.minExpectedPrice == 0) {
             return false;
-        } else if (depositData.minExpectedPrice < getPrice(_account, _token)) {
+        } else if (depositData.minExpectedPrice < getPrice(_depositId)) {
             return true;
         } else return false;
     }
 
     function withdraw(
-        address _token
-    ) external onlyConfigured(msg.sender, _token) {
-        require(canWithdraw(msg.sender, _token), "You cannot withdraw yet!");
+        uint256 _depositId
+    ) external onlyDepositOwner(msg.sender, _depositId) {
+        require(canWithdraw(_depositId), "You cannot withdraw yet!");
 
-        DepositData storage depositData = deposits[msg.sender][_token];
-        uint256 tmpBalance = depositData.balance;
-        depositData.balance = 0;
+        DepositData memory depositData = deposits[_depositId];
+        uint256 balance = depositData.balance;
 
-        IERC20(_token).transfer(msg.sender, tmpBalance);
+        delete deposits[_depositId];
+        lockerPass.burn(_depositId);
+
+        IERC20(depositData.token).transfer(msg.sender, balance);
     }
 
     function increaseMinExpectedPrice(
-        address _token,
-        int256 _newMinExpectedPrice
-    ) external onlyConfigured(msg.sender, _token) {
-        DepositData storage depositData = deposits[msg.sender][_token];
+        int256 _newMinExpectedPrice,
+        uint256 _depositId
+    ) external onlyDepositOwner(msg.sender, _depositId) {
+        DepositData storage depositData = deposits[_depositId];
 
         require(
             depositData.minExpectedPrice != 0,
@@ -179,10 +187,10 @@ contract ERC20Locker {
     }
 
     function increaseLockForDays(
-        address _token,
-        uint256 _newLockForDays
-    ) external onlyConfigured(msg.sender, _token) {
-        DepositData storage depositData = deposits[msg.sender][_token];
+        uint256 _newLockForDays,
+        uint256 _depositId
+    ) external onlyDepositOwner(msg.sender, _depositId) {
+        DepositData storage depositData = deposits[_depositId];
 
         require(
             depositData.lockForDays < _newLockForDays,
@@ -202,10 +210,9 @@ contract ERC20Locker {
     }
 
     function getPrice(
-        address _account,
-        address _token
-    ) public view onlyConfigured(_account, _token) returns (int256) {
-        DepositData memory depositData = deposits[_account][_token];
+        uint256 _depositId
+    ) public view onlyConfigured(_depositId) returns (int256) {
+        DepositData memory depositData = deposits[_depositId];
 
         if (depositData.priceFeed == ZERO_ADDRESS) {
             return 0;
@@ -214,15 +221,5 @@ contract ERC20Locker {
         (, int256 price, , , ) = PriceFeedInterface(depositData.priceFeed)
             .latestRoundData();
         return price / depositData.pricePrecision;
-    }
-
-    function getDepositors() external view returns (address[] memory) {
-        return depositors;
-    }
-
-    function getConfiguredTokens(
-        address _account
-    ) external view returns (address[] memory) {
-        return configuredTokens[_account];
     }
 }

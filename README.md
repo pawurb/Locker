@@ -160,28 +160,6 @@ Returns the latest price of the specified ERC20 `_token` for the specified `_acc
 * `_account`: Address of the account depositing target token.
 * `_token`: Address of ERC20 token for which to check the price.
 
-#### `getDepositors`
-
-```solidity
-function getDepositors() returns address[]
-```
-
-Returns an array of addresses representing all the depositors.
-
-#### `getConfiguredTokens`
-
-```solidity
-function getConfiguredTokens(
-  address _account
-) returns (address[])
-```
-
-Returns an array of ERC20 tokens that have been configured for the specified `_account`.
-
-**Arguments:**
-
-* `_account`: Address of the account.
-
 #### `deposits`
 
 ```solidity
@@ -195,7 +173,7 @@ A nested hash representing configuration of all stored tokens. You can use it to
 The `ETHLocker` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure an ETH/USD price value that will release the Ether. You need to deploy the contract with the following arguments:
 
 ```node
-const deposit = await ETHLocker.new(
+const locker = await ETHLocker.new(
   0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419,
   750,
   10000
@@ -213,8 +191,6 @@ const deposit = await ETHLocker.new(
 `canWithdraw() returns (bool)` - check if funds can be withdrawn
 
 `withdraw()` - withdraw funds to the contract maker address
-
-You can send more Ether to the contract after it has been initialized. Only maker of the contract can withdraw the funds. Don't send ERC20 tokens to this contract because they will be stuck forever.
 
 ## NFTLocker.sol
 

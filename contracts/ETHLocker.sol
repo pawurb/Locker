@@ -17,10 +17,16 @@ interface PriceFeedInterface {
 
 pragma solidity 0.8.17;
 
+import "./LockerPass.sol";
+
+contract ETHLockerPass is LockerPass {
+    constructor(address _owner) LockerPass(_owner, "ETHLockerPass", "LOP") {}
+}
+
 contract ETHLocker {
     PriceFeedInterface internal priceFeed;
-    mapping(address => DepositData) public deposits;
-    address[] public depositors;
+    mapping(uint256 => DepositData) public deposits;
+    ETHLockerPass public lockerPass;
 
     struct DepositData {
         uint256 lockForDays;
@@ -30,16 +36,16 @@ contract ETHLocker {
     }
 
     address private constant ZERO_ADDRESS = address(0x0);
-    string private constant ERRNOTCONFIGURED = "Address not configured.";
-    string private constant ERRALREADYCONFIGURED =
-        "Address already configured.";
+    string private constant ERRNOTCONFIGURED = "Deposit not configured.";
 
     constructor(address _priceFeed) {
         priceFeed = PriceFeedInterface(_priceFeed);
+        lockerPass = new ETHLockerPass(address(this));
     }
 
-    modifier onlyDepositor() {
-        require(deposits[msg.sender].createdAt != 0, ERRNOTCONFIGURED);
+    modifier onlyDepositOwner(address _account, uint256 _depositId) {
+        require(lockerPass.ownerOf(_depositId) == _account, "Access denied");
+        require(deposits[_depositId].createdAt != 0, ERRNOTCONFIGURED);
         _;
     }
 
@@ -47,31 +53,31 @@ contract ETHLocker {
         uint256 _lockForDays,
         int256 _minExpectedPrice
     ) external payable {
-        require(deposits[msg.sender].createdAt == 0, ERRALREADYCONFIGURED);
-
         require(_minExpectedPrice >= 0, "Invalid minExpectedPrice value.");
 
-        depositors.push(msg.sender);
-
-        DepositData memory newLock = DepositData({
+        DepositData memory newDeposit = DepositData({
             lockForDays: _lockForDays,
             createdAt: block.timestamp,
             minExpectedPrice: _minExpectedPrice,
             balance: msg.value
         });
 
-        deposits[msg.sender] = newLock;
+        uint256 newDepositId = lockerPass.nextId();
+        lockerPass.mint(msg.sender);
+        deposits[newDepositId] = newDeposit;
     }
 
-    function deposit() external payable onlyDepositor {
-        DepositData storage depositData = deposits[msg.sender];
+    function deposit(
+        uint256 _depositId
+    ) external payable onlyDepositOwner(msg.sender, _depositId) {
+        DepositData storage depositData = deposits[_depositId];
         depositData.balance = depositData.balance + msg.value;
     }
 
-    function canWithdraw(
-        address _account
-    ) public view onlyDepositor returns (bool) {
-        DepositData memory depositData = deposits[_account];
+    function canWithdraw(uint256 _depositId) public view returns (bool) {
+        require(deposits[_depositId].createdAt != 0, ERRNOTCONFIGURED);
+
+        DepositData memory depositData = deposits[_depositId];
 
         uint256 releaseAt = depositData.createdAt +
             (depositData.lockForDays * 1 days);
@@ -85,13 +91,16 @@ contract ETHLocker {
         } else return false;
     }
 
-    function withdraw() external onlyDepositor {
-        require(canWithdraw(msg.sender), "You cannot withdraw yet!");
-        DepositData storage depositData = deposits[msg.sender];
+    function withdraw(
+        uint256 _depositId
+    ) external onlyDepositOwner(msg.sender, _depositId) {
+        require(canWithdraw(_depositId), "You cannot withdraw yet!");
 
+        DepositData memory depositData = deposits[_depositId];
         uint256 balance = depositData.balance;
-        depositData.balance = 0;
 
+        delete deposits[_depositId];
+        lockerPass.burn(_depositId);
         payable(msg.sender).transfer(balance);
     }
 
@@ -101,11 +110,12 @@ contract ETHLocker {
     }
 
     function increaseLockForDays(
-        uint256 _newLockForDays
-    ) external onlyDepositor {
+        uint256 _newLockForDays,
+        uint256 _depositId
+    ) external onlyDepositOwner(msg.sender, _depositId) {
         require(_newLockForDays < 10000, "Too long lockup period!");
 
-        DepositData storage depositData = deposits[msg.sender];
+        DepositData storage depositData = deposits[_depositId];
 
         require(
             depositData.lockForDays < _newLockForDays,
@@ -115,11 +125,10 @@ contract ETHLocker {
     }
 
     function increaseMinExpectedPrice(
-        int256 _newMinExpectedPrice
-    ) external onlyDepositor {
-        require(deposits[msg.sender].createdAt != 0, ERRNOTCONFIGURED);
-
-        DepositData storage depositData = deposits[msg.sender];
+        int256 _newMinExpectedPrice,
+        uint256 _depositId
+    ) external onlyDepositOwner(msg.sender, _depositId) {
+        DepositData storage depositData = deposits[_depositId];
 
         require(
             depositData.minExpectedPrice != 0,
@@ -131,9 +140,5 @@ contract ETHLocker {
             "New value invalid!"
         );
         depositData.minExpectedPrice = _newMinExpectedPrice;
-    }
-
-    function getDepositors() external view returns (address[] memory) {
-        return depositors;
     }
 }
