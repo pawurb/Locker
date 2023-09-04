@@ -13,12 +13,15 @@ const advanceByDays = async (days) => {
   await time.increase(days * 86400)
 }
 
+const DEPOSIT_ID = 0
+
 describe("ERC20Locker", () => {
   const value = ethers.utils.parseEther("1")
   const lockForDays = 5
   let tokenA
   let tokenB
   let locker
+  let lockerPass
   let priceFeed
   let user1
   let user2
@@ -37,6 +40,12 @@ describe("ERC20Locker", () => {
 
     priceFeed = await PriceFeedMock.deploy(opts.currentPrice * 10e7)
     locker = await ERC20Locker.deploy()
+    let lockerPassAddress = await locker.lockerPass()
+    lockerPass = await ethers.getContractAt(
+      "contracts/LockerPass.sol:LockerPass",
+      lockerPassAddress
+    )
+
     tokenA = await MockERC20A.deploy()
     tokenB = await MockERC20B.deploy()
   }
@@ -66,17 +75,22 @@ describe("ERC20Locker", () => {
     )
   })
 
+  it("deploys ERC20LockerPass instance and sets itself as an admin", async () => {
+    expect(await lockerPass.admin()).to.equal(locker.address)
+    expect(await lockerPass.symbol()).to.equal("LOP")
+  })
+
   describe("'configureDeposit'", async () => {
     it("adds token data for the correct user without price conditions", async () => {
       await locker.configureDeposit(tokenA.address, 20)
-      const depositData = await locker.deposits(user1.address, tokenA.address)
+      let newDepositId = (await lockerPass.nextId()) - 1
+
+      const depositData = await locker.deposits(newDepositId)
       expect(depositData.lockForDays).to.equal(20)
       expect(depositData.minExpectedPrice).to.equal(0)
       expect(depositData.pricePrecision).to.equal(0)
       expect(depositData.priceFeed).to.equal(constants.ZERO_ADDRESS)
       expect(depositData.balance).to.equal(0)
-      const firstDepositor = await locker.depositors(0)
-      expect(firstDepositor).to.equal(user1.address)
     })
   })
 
@@ -89,43 +103,17 @@ describe("ERC20Locker", () => {
         150,
         10e7
       )
+      let newDepositId = (await lockerPass.nextId()) - 1
 
-      const depositData = await locker.deposits(user1.address, tokenA.address)
+      const depositData = await locker.deposits(newDepositId)
       expect(depositData.lockForDays).to.equal(20)
       expect(depositData.minExpectedPrice).to.equal(150)
       expect(depositData.pricePrecision).to.equal(10e7)
       expect(depositData.priceFeed).to.equal(priceFeed.address)
       expect(depositData.balance).to.equal(0)
-      const firstDepositor = await locker.depositors(0)
-      expect(firstDepositor).to.equal(user1.address)
     })
 
-    it("does not duplicate depositor address", async () => {
-      await locker.configureDepositWithPrice(
-        tokenA.address,
-        20,
-        priceFeed.address,
-        150,
-        10e7
-      )
-      await locker.configureDepositWithPrice(
-        tokenB.address,
-        20,
-        priceFeed.address,
-        150,
-        10e7
-      )
-
-      const firstDepositor = await locker.depositors(0)
-      expect(firstDepositor).to.equal(user1.address)
-
-      await expectRevert(locker.depositors(1), "revert")
-
-      const depositors = await locker.getDepositors()
-      expect(depositors.length).to.equal(1)
-    })
-
-    it("does not allow adding token more than once", async () => {
+    it("does allows adding token more than once", async () => {
       await locker.configureDepositWithPrice(
         tokenA.address,
         20,
@@ -134,15 +122,12 @@ describe("ERC20Locker", () => {
         10e7
       )
 
-      await expectRevert(
-        locker.configureDepositWithPrice(
-          tokenA.address,
-          20,
-          priceFeed.address,
-          150,
-          10e7
-        ),
-        "already configured"
+      await locker.configureDepositWithPrice(
+        tokenA.address,
+        20,
+        priceFeed.address,
+        140,
+        10e7
       )
     })
 
@@ -180,17 +165,15 @@ describe("ERC20Locker", () => {
         150,
         10e7
       )
+      let newDepositId = (await lockerPass.nextId()) - 1
 
-      const depositData = await locker.deposits(user1.address, tokenA.address)
+      const depositData = await locker.deposits(newDepositId)
       expect(depositData.minExpectedPrice).to.equal(150)
 
-      const currentPriceA = await locker.getPrice(user1.address, tokenA.address)
+      const currentPriceA = await locker.getPrice(newDepositId)
       expect(currentPriceA).to.equal(100)
 
-      await expectRevert(
-        locker.getPrice(user1.address, tokenB.address),
-        "not configured"
-      )
+      await expectRevert(locker.getPrice(newDepositId + 1), "not configured")
     })
 
     it("checks that disabling the minimum price is only possible for zero address price oracle", async () => {
@@ -212,8 +195,9 @@ describe("ERC20Locker", () => {
         0,
         10e7
       )
+      let newDepositId = (await lockerPass.nextId()) - 1
 
-      const currentPriceA = await locker.getPrice(user1.address, tokenA.address)
+      const currentPriceA = await locker.getPrice(newDepositId)
       expect(currentPriceA).to.equal(0)
     })
 
@@ -233,10 +217,7 @@ describe("ERC20Locker", () => {
 
   describe("'canWithdraw'", async () => {
     it("token was not configured it raises an error", async () => {
-      await expectRevert(
-        locker.canWithdraw(user1.address, tokenA.address),
-        "not configured"
-      )
+      await expectRevert(locker.canWithdraw(DEPOSIT_ID), "not configured")
 
       await locker.configureDepositWithPrice(
         tokenA.address,
@@ -245,7 +226,7 @@ describe("ERC20Locker", () => {
         150,
         10e7
       )
-      const result = await locker.canWithdraw(user1.address, tokenA.address)
+      const result = await locker.canWithdraw(DEPOSIT_ID)
       expect(result).to.equal(false)
     })
 
@@ -258,13 +239,11 @@ describe("ERC20Locker", () => {
         10e7
       )
       await advanceByDays(21)
-      const result = await locker
-        .connect(user2)
-        .canWithdraw(user1.address, tokenA.address)
+      const result = await locker.connect(user2).canWithdraw(DEPOSIT_ID)
       expect(result).to.equal(true)
     })
 
-    it("time for holding the token has passed it returns false for other user", async () => {
+    it("time for holding the token has passed it returns true for other user", async () => {
       await locker.configureDepositWithPrice(
         tokenA.address,
         20,
@@ -282,9 +261,7 @@ describe("ERC20Locker", () => {
           10e7
         )
       await advanceByDays(21)
-      const result = await locker
-        .connect(user2)
-        .canWithdraw(user2.address, tokenA.address)
+      const result = await locker.connect(user2).canWithdraw(DEPOSIT_ID + 1)
       expect(result).to.equal(false)
     })
 
@@ -301,7 +278,7 @@ describe("ERC20Locker", () => {
           150,
           10e7
         )
-        const result = await locker.canWithdraw(user1.address, tokenA.address)
+        const result = await locker.canWithdraw(DEPOSIT_ID)
         expect(result).to.equal(true)
       })
 
@@ -313,7 +290,7 @@ describe("ERC20Locker", () => {
           210,
           10e7
         )
-        const result = await locker.canWithdraw(user1.address, tokenA.address)
+        const result = await locker.canWithdraw(DEPOSIT_ID)
         expect(result).to.equal(false)
       })
 
@@ -325,7 +302,7 @@ describe("ERC20Locker", () => {
           0,
           10e7
         )
-        const result = await locker.canWithdraw(user1.address, tokenA.address)
+        const result = await locker.canWithdraw(DEPOSIT_ID)
         expect(result).to.equal(false)
       })
     })
@@ -350,13 +327,17 @@ describe("ERC20Locker", () => {
       )
       expect(approvedAmountA).to.equal(50)
 
-      await expect(locker.deposit(tokenA.address, 20)).to.changeTokenBalances(
+      await expect(
+        locker.deposit(tokenA.address, 20, DEPOSIT_ID)
+      ).to.changeTokenBalances(
         tokenA,
         [locker.address, user1.address],
         [20, -20]
       )
 
-      await expect(locker.deposit(tokenA.address, 10)).to.changeTokenBalances(
+      await expect(
+        locker.deposit(tokenA.address, 10, DEPOSIT_ID)
+      ).to.changeTokenBalances(
         tokenA,
         [locker.address, user1.address],
         [10, -10]
@@ -372,7 +353,7 @@ describe("ERC20Locker", () => {
 
   describe("'withdraw'", async () => {
     it("raises an error for not configured tokens", async () => {
-      await expectRevert(locker.withdraw(tokenA.address), "not configured")
+      await expectRevert(locker.withdraw(DEPOSIT_ID), "Access denied")
     })
 
     it("returns correct amount of token only when withdrawal conditions are correct", async () => {
@@ -384,50 +365,63 @@ describe("ERC20Locker", () => {
         10e7
       )
       await tokenA.approve(locker.address, 50)
-      await locker.deposit(tokenA.address, 50)
+      await locker.deposit(tokenA.address, 50, DEPOSIT_ID)
 
-      await expectRevert(locker.withdraw(tokenA.address), "cannot withdraw")
+      await expectRevert(locker.withdraw(DEPOSIT_ID), "cannot withdraw")
 
       await advanceByDays(30)
 
-      await expect(locker.withdraw(tokenA.address)).to.changeTokenBalances(
+      await expect(locker.withdraw(DEPOSIT_ID)).to.changeTokenBalances(
         tokenA,
         [locker.address, user1.address],
         [-50, 50]
       )
 
-      const depositData = await locker.deposits(user1.address, tokenA.address)
+      const depositData = await locker.deposits(DEPOSIT_ID)
       expect(depositData.balance).to.equal(0)
     })
 
     it("does not affect balances of other users", async () => {
       await locker.configureDeposit(tokenA.address, 20)
       await tokenA.approve(locker.address, 50)
-      await locker.deposit(tokenA.address, 50)
+      await locker.deposit(tokenA.address, 50, DEPOSIT_ID)
       await tokenA.transfer(user2.address, 30)
 
       await locker.connect(user2).configureDeposit(tokenA.address, 30)
       await tokenA.connect(user2).approve(locker.address, 30)
-      await locker.connect(user2).deposit(tokenA.address, 30)
+      await locker.connect(user2).deposit(tokenA.address, 30, DEPOSIT_ID + 1)
 
       await advanceByDays(25)
 
       await expectRevert(
-        locker.connect(user2).withdraw(tokenA.address),
+        locker.connect(user2).withdraw(DEPOSIT_ID + 1),
         "cannot withdraw"
       )
 
-      await expect(locker.withdraw(tokenA.address)).to.changeTokenBalances(
+      await expect(locker.withdraw(DEPOSIT_ID)).to.changeTokenBalances(
         tokenA,
         [locker.address, user1.address],
         [-50, 50]
       )
 
-      const depositData1 = await locker.deposits(user1.address, tokenA.address)
+      const depositData1 = await locker.deposits(DEPOSIT_ID)
       expect(depositData1.balance).to.equal(0)
 
-      const depositData2 = await locker.deposits(user2.address, tokenA.address)
+      const depositData2 = await locker.deposits(DEPOSIT_ID + 1)
       expect(depositData2.balance).to.equal(30)
+    })
+
+    it("burns the correct LockerPass NFT", async () => {
+      await locker.configureDeposit(tokenA.address, 20)
+      await tokenA.approve(locker.address, 50)
+      await locker.deposit(tokenA.address, 50, DEPOSIT_ID)
+      await advanceByDays(21)
+
+      await expect(locker.withdraw(DEPOSIT_ID)).to.changeTokenBalances(
+        lockerPass,
+        [user1],
+        [-1]
+      )
     })
   })
 
@@ -444,21 +438,21 @@ describe("ERC20Locker", () => {
 
     it("raises an error for not configured tokens", async () => {
       await expectRevert(
-        locker.increaseMinExpectedPrice(tokenB.address, 25),
-        "not configured"
+        locker.increaseMinExpectedPrice(25, DEPOSIT_ID + 1),
+        "Access denied"
       )
     })
 
     it("does not allow decreasing the expected price", async () => {
       await expectRevert(
-        locker.increaseMinExpectedPrice(tokenA.address, 120),
+        locker.increaseMinExpectedPrice(120, DEPOSIT_ID),
         "invalid"
       )
     })
 
     it("allows increasing the min expected price", async () => {
-      await locker.increaseMinExpectedPrice(tokenA.address, 170)
-      const depositData = await locker.deposits(user1.address, tokenA.address)
+      await locker.increaseMinExpectedPrice(170, DEPOSIT_ID)
+      const depositData = await locker.deposits(DEPOSIT_ID)
       expect(depositData.minExpectedPrice).to.equal(170)
     })
 
@@ -466,8 +460,8 @@ describe("ERC20Locker", () => {
       await locker.configureDeposit(tokenB.address, 10)
 
       await expectRevert(
-        locker.increaseMinExpectedPrice(tokenB.address, 20),
-        "not configured"
+        locker.increaseMinExpectedPrice(20, DEPOSIT_ID),
+        "value invalid"
       )
     })
   })
@@ -479,22 +473,19 @@ describe("ERC20Locker", () => {
 
     it("raises an error for not configured tokens", async () => {
       await expectRevert(
-        locker.increaseLockForDays(tokenB.address, 25),
-        "not configured"
+        locker.increaseLockForDays(25, DEPOSIT_ID + 1),
+        "Access denied"
       )
     })
 
     it("does not allow decreasing the lock duration", async () => {
-      await expectRevert(
-        locker.increaseLockForDays(tokenA.address, 15),
-        "invalid"
-      )
+      await expectRevert(locker.increaseLockForDays(15, DEPOSIT_ID), "invalid")
     })
 
     it("allows increasing the lock duration", async () => {
-      await locker.increaseLockForDays(tokenA.address, 25)
+      await locker.increaseLockForDays(25, DEPOSIT_ID)
 
-      const depositData = await locker.deposits(user1.address, tokenA.address)
+      const depositData = await locker.deposits(DEPOSIT_ID)
       expect(depositData.lockForDays).to.equal(25)
     })
   })
@@ -513,56 +504,6 @@ describe("ERC20Locker", () => {
 
     it("raises an error for invalid price feed addresses", async () => {
       await expectRevert(locker.checkPriceFeed(tokenA.address, 10e7), "revert")
-    })
-  })
-
-  describe("'getDepositors'", async () => {
-    it("returns array of configured account addresses", async () => {
-      await locker.configureDepositWithPrice(
-        tokenA.address,
-        20,
-        priceFeed.address,
-        150,
-        10e7
-      )
-      await locker
-        .connect(user2)
-        .configureDepositWithPrice(
-          tokenA.address,
-          20,
-          priceFeed.address,
-          150,
-          10e7
-        )
-
-      const depositors = await locker.getDepositors()
-      expect(depositors[0]).to.equal(user1.address)
-      expect(depositors[1]).to.equal(user2.address)
-      expect(depositors.length).to.equal(2)
-    })
-  })
-
-  describe("'getConfiguredTokens'", async () => {
-    it("returns array of tokens configured for account ", async () => {
-      await locker.configureDepositWithPrice(
-        tokenA.address,
-        20,
-        priceFeed.address,
-        150,
-        10e7
-      )
-      await locker.configureDepositWithPrice(
-        tokenB.address,
-        20,
-        priceFeed.address,
-        150,
-        10e7
-      )
-
-      const tokens = await locker.getConfiguredTokens(user1.address)
-      expect(tokens.length).to.equal(2)
-      expect(tokens[0]).to.equal(tokenA.address)
-      expect(tokens[1]).to.equal(tokenB.address)
     })
   })
 })

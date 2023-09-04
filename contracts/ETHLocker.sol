@@ -19,14 +19,10 @@ pragma solidity 0.8.17;
 
 import "./LockerPass.sol";
 
-contract ETHLockerPass is LockerPass {
-    constructor(address _owner) LockerPass(_owner, "ETHLockerPass", "LOP") {}
-}
-
 contract ETHLocker {
     PriceFeedInterface internal priceFeed;
     mapping(uint256 => DepositData) public deposits;
-    ETHLockerPass public lockerPass;
+    LockerPass public lockerPass;
 
     struct DepositData {
         uint256 lockForDays;
@@ -40,7 +36,7 @@ contract ETHLocker {
 
     constructor(address _priceFeed) {
         priceFeed = PriceFeedInterface(_priceFeed);
-        lockerPass = new ETHLockerPass(address(this));
+        lockerPass = new LockerPass(address(this), "ETHLockerPass", "LOP");
     }
 
     modifier onlyDepositOwner(address _account, uint256 _depositId) {

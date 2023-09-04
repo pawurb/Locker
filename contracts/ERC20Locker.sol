@@ -50,13 +50,9 @@ pragma solidity 0.8.17;
 
 import "./LockerPass.sol";
 
-contract ERC20LockerPass is LockerPass {
-    constructor(address _owner) LockerPass(_owner, "ERC20LockerPass", "LOP") {}
-}
-
 contract ERC20Locker {
     mapping(uint256 => DepositData) public deposits;
-    ERC20LockerPass public lockerPass;
+    LockerPass public lockerPass;
 
     struct DepositData {
         address token;
@@ -84,7 +80,7 @@ contract ERC20Locker {
     string private constant ERRNOTCONFIGURED = "Deposit not configured.";
 
     constructor() {
-        lockerPass = new ERC20LockerPass(address(this));
+        lockerPass = new LockerPass(address(this), "ERC20LockerPass", "LOP");
     }
 
     function configureDepositWithPrice(
