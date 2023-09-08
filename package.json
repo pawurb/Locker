@@ -1,5 +1,5 @@
 {
-  "name": "smarthold-contracts",
+  "name": "Locker",
   "version": "1.0.0",
   "description": "",
   "main": "truffle-config.js",
@@ -14,14 +14,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pawurb/SmartHold-contracts.git"
+    "url": "git+https://github.com/pawurb/Locker.git"
   },
   "author": "Paweł Urbanek",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/pawurb/SmartHold-contracts/issues"
+    "url": "https://github.com/pawurb/Locker/issues"
   },
-  "homepage": "https://github.com/pawurb/SmartHold-contracts#readme",
+  "homepage": "https://github.com/pawurb/Locker#readme",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
     "@openzeppelin/contracts": "^4.8.0",
