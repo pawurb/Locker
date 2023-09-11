@@ -42,7 +42,7 @@ After configuring the ERC20 token release conditions you have to approve `Locker
   ERC20(tokenAddress).approve(lockerAddress, amount);
 ```
 
-If you're not sure how to do it, then better don't. You can lose your tokens by incorrectly transferring them into the `Locker` smart contract.
+If you're not sure how to do it, then better don't. You can lose your tokens by incorrectly transferring them into the `ERC20Locker` smart contract.
 
 #### `configureDepositWithPrice`
 
@@ -234,6 +234,16 @@ Returns `true` if the specified `_depositId` be withdrawn by an owner. The withd
 
 * `_depositId`: ID of a target deposit
 
+#### `withdraw`
+
+```solidity
+function withdraw(
+    uint256 _depositId
+)
+```
+
+This method withdraws ETH deposited in a target `_depositId` and burns associated `LockerPass` NFT token. It can be executed only if `canWithdraw` returns `true` for a target `_depositId`.
+
 #### `increaseMinExpectedPrice`
 
 ```solidity
@@ -302,18 +312,18 @@ Before configuring the ERC721 token instance conditions you have to approve `Loc
 function canWithdraw(
     address _account,
     address _token,
-    uint256 _depositId
+    uint256 _tokenId
 ) returns (bool)
 ```
 
 Checks if a user can withdraw a specific NFT.
 
-#### `canWithdraw`
+#### `withdraw`
 
 ```solidity
 function withdraw(
     address _token,
-    uint256 _depositId
+    uint256 _tokenId
 )
 ```
 
@@ -324,7 +334,7 @@ Allows users to withdraw an NFT that has reached its lock duration and transfers
 ```solidity
 function increaseLockForDays(
   address _token,
-  uint256 _depositId,
+  uint256 _tokenId,
   int256 _newLockForDays
 )
 ```
