@@ -34,6 +34,8 @@ This function is used to configure a deposit without a minimum expected price fo
 * `_token`: Address of ERC20 token to be configured.
 * `_lockForDays`: The number of days the tokens will be locked.
 
+As a result of executing this method a `LockerPass` NFT token will be minted to your account. As long as you're an owner of a target NFT representing your deposit you'll be able to manage and withdraw the deposited ERC20 tokens.
+
 After configuring the ERC20 token release conditions you have to approve `Locker` contract to transfer it from your account. To do it you have to make the following method call:
 
 ```solidity
@@ -62,71 +64,84 @@ This function is used to configure a deposit with a minimum expected price for a
 * `_lockForDays`: The number of days the tokens will be locked.
 * `_priceFeed`: The address of the price feed smart contract.
 * `_minExpectedPrice`: The minimum expected price for the token.
-* `_pricePrecision`: The oracel price precision for the token. Most ChainLink oracles use `10e7`. You can use `checkPriceFeed` method to confirm price precision used by your choosen oracle.
+* `_pricePrecision`: The oracle price precision for the token. Most ChainLink oracles use `10e7`. You can use `checkPriceFeed` method to confirm price precision used by your choosen oracle.
 
 #### `deposit`
 
 ```solidity
-function configureDepositWithPrice(
+function deposit(
     address _token,
-    uint256 _amount
+    uint256 _amount,
+    uint256 _depositId
 )
 ```
 
 Transfers and locks the `_amount` of tokens to the ERC20 `_token` address into the contract. Token must be configured and correct amount approved before calling this method.
 
+You must be owner of a `LockerPass` NFT with a target `_depositId` to execute this method.
+
 **Arguments:**
 
 * `_token`: Address of ERC20 token to be deposited.
 * `_amount`: amount of tokens to deposit.
+* `_depositId`: ID of a target deposit
 
 #### `canWithdraw`
 
 ```solidity
 function canWithdraw(
-    address _account,
-    address _token
+    uint256 _depositId
 ) returns (bool)
 ```
 
-Returns `true` if the specified `_account` is eligible to withdraw deposit of their ERC20 `_token` otherwise `false`. The withdrawal is allowed if the lock period is over, or if the expected price is reached.
+Returns `true` if the specified `_depositId` be withdrawn by an owner. The withdrawal is allowed if the lock period is over, or if the expected price is reached.
 
 **Arguments:**
 
-* `_account`: Owner account of the deposit.
-* `_token`: Address of ERC20 token to be withdrawn.
+* `_depositId`: ID of a target deposit
+
+
+#### `withdraw`
+
+```solidity
+function withdraw(
+    uint256 _depositId
+)
+```
+
+This method withdraws ERC20 tokens deposited in a target `_depositId` and burns associated `LockerPass` NFT token. It can be executed only if `canWithdraw` returns `true` for a target `_depositId`.
 
 #### `increaseMinExpectedPrice`
 
 ```solidity
 function increaseMinExpectedPrice(
-  address _token,
   int256 _newMinExpectedPrice
+  uint256 _depositId
 )
 ```
 
-Increases the minimum expected price for the specified ERC20 `_token` for the caller to `_newMinExpectedPrice`, if it is greater than the current minimum expected price.
+Increases the minimum expected price for the specified `_depositId` to `_newMinExpectedPrice`, if it is greater than the current minimum expected price.
 
 **Arguments:**
 
-* `_token`: Address of ERC20 token to be reconfigured.
 * `_newMinExpectedPrice`: New value of minimum expected price that will release the token.
+* `_depositId`: ID of a target deposit
 
 #### `increaseLockForDays`
 
 ```solidity
 function increaseLockForDays(
-  address _token,
   int256 _newLockForDays
+  uint256 _depositId
 )
 ```
 
-Increases the lock period for the specified ERC20 `_token` for the caller to `_newLockForDays`, if it is greater than the current lock period.
+Increases the lock period for the specified `_depositId` to `_newLockForDays`, if it is greater than the current lock period.
 
 **Arguments:**
 
-* `_token`: Address of ERC20 token to be reconfigured.
 * `_newMinExpectedPrice`: New number of days for how long the token should be locked.
+* `_depositId`: ID of a target deposit
 
 #### `checkPriceFeed`
 
@@ -148,73 +163,106 @@ Checks the price feed at the specified `_feedAddress` and returns the latest pri
 
 ```solidity
 function getPrice(
-  address _account,
-  address _token
+  uint256 _depositId
 ) returns (int256)
 ```
 
-Returns the latest price of the specified ERC20 `_token` for the specified `_account`. If the price feed is not set, then 0 is returned.
+Returns the latest price reported for a configured `_depositId`. If the price feed is not set, then 0 is returned.
 
 **Arguments:**
 
-* `_account`: Address of the account depositing target token.
-* `_token`: Address of ERC20 token for which to check the price.
-
-#### `getDepositors`
-
-```solidity
-function getDepositors() returns address[]
-```
-
-Returns an array of addresses representing all the depositors.
-
-#### `getConfiguredTokens`
-
-```solidity
-function getConfiguredTokens(
-  address _account
-) returns (address[])
-```
-
-Returns an array of ERC20 tokens that have been configured for the specified `_account`.
-
-**Arguments:**
-
-* `_account`: Address of the account.
+* `_depositId`: ID of a target deposit
 
 #### `deposits`
 
 ```solidity
-mapping(address => mapping(address => DepositData)) deposits;
+mapping(uint256 => DepositData) deposits;
 ```
 
-A nested hash representing configuration of all stored tokens. You can use it to read ERC20 token configuration based on account and token address.
+A nested hash representing configuration of all configured deposits. You can use it to read ERC20 token configuration based on a `_depositId`.
 
 ## ETHLocker.sol
 
 The `ETHLocker` contract can be used to lock your Ether for a predefined period of time. Optionally, you can configure an ETH/USD price value that will release the Ether. You need to deploy the contract with the following arguments:
 
 ```node
-const deposit = await ETHLocker.new(
-  0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419,
-  750,
-  10000
+const locker = await ETHLocker.new(
+  0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
 )
 ```
 
 ### API
 
-`constructor(address _priceFeed, uint256 _lockForDays, int256 _minimumPrice)`
+#### `configureDeposit`
 
-* `_priceFeedAddress` - `[address]` address of the price feed oracle contract
-* `_lockForDays` - `[uint256]` number of days that you want to lock your funds for (max 4000)
-* `_minimumPrice` - `[int256]` minimum price (in USD) that would release the funds (setting it to 0 disables this condition)
+```solidity
+function configureDeposit(
+    uint256 _lockForDays,
+    int256 _minExpectedPrice
+)
+```
 
-`canWithdraw() returns (bool)` - check if funds can be withdrawn
+This function is used to configure an ETH deposit for `_lockForDays` duration. Deposit can optionally be released early if configured `_minExpectedPrice` is reported by a price oracle. If `_minExpectedPrice` is set to `0` then this condition is ommited.
 
-`withdraw()` - withdraw funds to the contract maker address
+As a result of executing this method a `LockerPass` NFT token will be minted to your account. As long as you're an owner of a target NFT representing your deposit you'll be able to manage and withdraw the deposited Ether.
 
-You can send more Ether to the contract after it has been initialized. Only maker of the contract can withdraw the funds. Don't send ERC20 tokens to this contract because they will be stuck forever.
+#### `deposit`
+
+```solidity
+function deposit(
+    uint256 _depositId
+)
+```
+
+This method adds the sent Ether value to the target `_depositId`. You must be owner of a `LockerPass` NFT with a target `_depositId` to execute this method.
+
+**Arguments:**
+
+* `_depositId`: ID of a target deposit
+
+#### `canWithdraw`
+
+```solidity
+function canWithdraw(
+    uint256 _depositId
+) returns (bool)
+```
+
+Returns `true` if the specified `_depositId` be withdrawn by an owner. The withdrawal is allowed if the lock period is over, or if the expected price is reached.
+
+**Arguments:**
+
+* `_depositId`: ID of a target deposit
+
+#### `increaseMinExpectedPrice`
+
+```solidity
+function increaseMinExpectedPrice(
+  int256 _newMinExpectedPrice
+  uint256 _depositId
+)
+```
+
+Increases the minimum expected price for the specified `_depositId` to `_newMinExpectedPrice`, if it is greater than the current minimum expected price.
+
+#### `increaseLockForDays`
+
+```solidity
+function increaseLockForDays(
+  int256 _newLockForDays
+  uint256 _depositId
+)
+```
+
+Increases the lock period for the specified `_depositId` to `_newLockForDays`, if it is greater than the current lock period.
+
+#### `deposits`
+
+```solidity
+mapping(uint256 => DepositData) deposits;
+```
+
+A nested hash representing configuration of all configured deposits. You can use it to read configuration based on a `_depositId`.
 
 ## NFTLocker.sol
 
@@ -229,7 +277,7 @@ Each user account can configure any number of distinct ERC721 token instances.
 ```solidity
 function deposit(
     address _token,
-    uint256 _tokenId,
+    uint256 _depositId,
     uint256 _lockForDays
 )
 ```
@@ -239,7 +287,7 @@ Allows users to deposit an NFT into the contract. Target token will be released 
 **Arguments:**
 
 * `_token`: Address of ERC721 token to be configured.
-* `_tokenId`: ID of target NFT instance to be configured.
+* `_depositId`: ID of target NFT instance to be configured.
 * `_lockForDays`: The number of days the tokens will be locked.
 
 Before configuring the ERC721 token instance conditions you have to approve `Locker` contract to transfer it from your account. To do it you have to make the following method call:
@@ -254,7 +302,7 @@ Before configuring the ERC721 token instance conditions you have to approve `Loc
 function canWithdraw(
     address _account,
     address _token,
-    uint256 _tokenId
+    uint256 _depositId
 ) returns (bool)
 ```
 
@@ -265,7 +313,7 @@ Checks if a user can withdraw a specific NFT.
 ```solidity
 function withdraw(
     address _token,
-    uint256 _tokenId
+    uint256 _depositId
 )
 ```
 
@@ -276,7 +324,7 @@ Allows users to withdraw an NFT that has reached its lock duration and transfers
 ```solidity
 function increaseLockForDays(
   address _token,
-  uint256 _tokenId,
+  uint256 _depositId,
   int256 _newLockForDays
 )
 ```
@@ -355,7 +403,6 @@ The smart contract constructor takes in three parameters:
 
 `withdraw()` - Withdraws the deposited ETH if the withdrawal conditions are met.
 `canWithdraw() returns (bool)` - Checks if the withdrawal conditions are met. Returns `true` if the withdrawal conditions are met; otherwise, `false`.
-
 
 ## Price feeds
 
