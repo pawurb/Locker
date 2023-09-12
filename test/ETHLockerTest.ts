@@ -82,7 +82,7 @@ describe("ETHLocker", () => {
     it("accepts funds and sets correct default values", async () => {
       await locker.configureDeposit(10, 0, { value: oneEther.toString() })
 
-      let newDepositId = parseInt((await lockerPass.nextId())) - 1
+      let newDepositId = parseInt(await lockerPass.nextId()) - 1
 
       expect(DEPOSIT_ID).to.equal(newDepositId)
       expect(await lockerPass.ownerOf(newDepositId)).to.equal(user1.address)
@@ -106,7 +106,9 @@ describe("ETHLocker", () => {
     it("allows configuring multiple deposits", async () => {
       await locker.configureDeposit(10, 0, { value: oneEther.toString() })
       await locker.configureDeposit(10, 0, { value: oneEther.toString() })
-      await locker.connect(user2).configureDeposit(10, 0, { value: oneEther.toString() })
+      await locker
+        .connect(user2)
+        .configureDeposit(10, 0, { value: oneEther.toString() })
     })
 
     it("does not accept negative expected price", async () => {
@@ -139,14 +141,15 @@ describe("ETHLocker", () => {
       await locker.configureDeposit(10, 0, { value: oneEther.toString() })
       expect((await locker.deposits(DEPOSIT_ID)).balance).to.equal(oneEther)
       await locker.deposit(DEPOSIT_ID, { value: oneEther.toString() })
-      expect((await locker.deposits(DEPOSIT_ID)).balance).to.equal(
-        twoEther
-      )
+      expect((await locker.deposits(DEPOSIT_ID)).balance).to.equal(twoEther)
     })
 
     it("does not accept ETH transfer without method call", async () => {
       await expectRevert(
-        user1.sendTransaction({ value: oneEther.toString(), to: locker.target }),
+        user1.sendTransaction({
+          value: oneEther.toString(),
+          to: locker.target,
+        }),
         "Transaction reverted"
       )
     })
@@ -249,20 +252,19 @@ describe("ETHLocker", () => {
       await locker
         .connect(user2)
         .configureDeposit(10, 1100, { value: oneEther.toString() })
-      expect((await locker.deposits(DEPOSIT_ID)).balance).to.equal(
-        twoEther
-      )
+      expect((await locker.deposits(DEPOSIT_ID)).balance).to.equal(twoEther)
       expect((await locker.deposits(DEPOSIT_ID + 1)).balance).to.equal(oneEther)
 
       await advanceByDays(11)
 
       await expect(
         locker.connect(user2).withdraw(DEPOSIT_ID + 1)
-      ).to.changeEtherBalances([user2, locker], [oneEther.toString(), oneEther.sub(twoEther).toString()])
-
-      expect((await locker.deposits(DEPOSIT_ID)).balance).to.equal(
-        twoEther
+      ).to.changeEtherBalances(
+        [user2, locker],
+        [oneEther.toString(), oneEther.sub(twoEther).toString()]
       )
+
+      expect((await locker.deposits(DEPOSIT_ID)).balance).to.equal(twoEther)
       expect((await locker.deposits(DEPOSIT_ID + 1)).balance).to.equal(0)
     })
 

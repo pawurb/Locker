@@ -239,10 +239,7 @@ describe("ERC20LockerPriv", () => {
 
   describe("'checkPriceFeed'", async () => {
     it("returns current price for valid price feeds", async () => {
-      const priceInDollars = await locker.checkPriceFeed(
-        priceFeed.target,
-        10e7
-      )
+      const priceInDollars = await locker.checkPriceFeed(priceFeed.target, 10e7)
       expect(priceInDollars).to.equal(100)
 
       const priceInCents = await locker.checkPriceFeed(priceFeed.target, 10e5)

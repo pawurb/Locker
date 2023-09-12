@@ -64,9 +64,7 @@ describe("ETHLockerPriv", () => {
     it("contract gets deployed to test network and accepts initial ETH transfer", async () => {
       assert.ok(locker.target)
 
-      expect(await ethers.provider.getBalance(locker.target)).to.equal(
-        value
-      )
+      expect(await ethers.provider.getBalance(locker.target)).to.equal(value)
     })
 
     it("sets the correct owner and other attributes", async () => {
@@ -78,7 +76,10 @@ describe("ETHLockerPriv", () => {
     })
 
     it("accepts more ETH transfer after deployment", async () => {
-      await owner.sendTransaction({ value: value.toString(), to: locker.target })
+      await owner.sendTransaction({
+        value: value.toString(),
+        to: locker.target,
+      })
 
       expect(await ethers.provider.getBalance(locker.target)).to.equal(
         value.add(value)
@@ -88,10 +89,7 @@ describe("ETHLockerPriv", () => {
 
   describe("'withdraw'", async () => {
     it("can only be called by the deposit contract owner", async () => {
-      await expectRevert(
-        locker.connect(notOwner).withdraw(),
-        "Access denied"
-      )
+      await expectRevert(locker.connect(notOwner).withdraw(), "Access denied")
     })
 
     it("required time did not pass yet, it does not withdraw funds", async () => {

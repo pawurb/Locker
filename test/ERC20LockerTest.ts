@@ -83,7 +83,7 @@ describe("ERC20Locker", () => {
   describe("'configureDeposit'", async () => {
     it("adds token data for the correct user without price conditions", async () => {
       await locker.configureDeposit(tokenA.target, 20)
-      let newDepositId = parseInt((await lockerPass.nextId())) - 1
+      let newDepositId = parseInt(await lockerPass.nextId()) - 1
 
       const depositData = await locker.deposits(newDepositId)
       expect(depositData.lockForDays).to.equal(20)
@@ -103,7 +103,7 @@ describe("ERC20Locker", () => {
         150,
         10e7
       )
-      let newDepositId = parseInt((await lockerPass.nextId())) - 1
+      let newDepositId = parseInt(await lockerPass.nextId()) - 1
 
       const depositData = await locker.deposits(newDepositId)
       expect(depositData.lockForDays).to.equal(20)
@@ -165,7 +165,7 @@ describe("ERC20Locker", () => {
         150,
         10e7
       )
-      let newDepositId = parseInt((await lockerPass.nextId())) - 1
+      let newDepositId = parseInt(await lockerPass.nextId()) - 1
 
       const depositData = await locker.deposits(newDepositId)
       expect(depositData.minExpectedPrice).to.equal(150)
@@ -195,7 +195,7 @@ describe("ERC20Locker", () => {
         0,
         10e7
       )
-      let newDepositId = parseInt((await lockerPass.nextId())) - 1
+      let newDepositId = parseInt(await lockerPass.nextId()) - 1
 
       const currentPriceA = await locker.getPrice(newDepositId)
       expect(currentPriceA).to.equal(0)
@@ -492,10 +492,7 @@ describe("ERC20Locker", () => {
 
   describe("'checkPriceFeed'", async () => {
     it("returns current price for valid price feeds", async () => {
-      const priceInDollars = await locker.checkPriceFeed(
-        priceFeed.target,
-        10e7
-      )
+      const priceInDollars = await locker.checkPriceFeed(priceFeed.target, 10e7)
       expect(priceInDollars).to.equal(100)
 
       const priceInCents = await locker.checkPriceFeed(priceFeed.target, 10e5)
