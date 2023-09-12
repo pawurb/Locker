@@ -52,6 +52,10 @@ interface IERC721 {
     ) external view returns (bool);
 }
 
+interface IERC165 {
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
+}
+
 interface IERC721Receiver {
     function onERC721Received(
         address operator,
@@ -96,6 +100,12 @@ contract LockerPass is IERC721 {
         admin = _admin;
         name = _name;
         symbol = _symbol;
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view returns (bool) {
+        return
+            interfaceId == type(IERC721).interfaceId ||
+            interfaceId == type(IERC165).interfaceId;
     }
 
     function balanceOf(address _owner) external view returns (uint256) {
