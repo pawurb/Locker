@@ -21,10 +21,10 @@ async function main() {
   }
 
   const locker = await ethers.deployContract("ETHLocker", [usdEthOracle]);
-  await locker.deployTransaction.wait()
+  await locker.waitForDeployment()
 
   console.log(
-    `ETHLocker deployed to ${locker.deployTransaction.creates}`
+    `ETHLocker deployed to ${locker.target}`
   );
 }
 

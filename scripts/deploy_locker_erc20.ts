@@ -10,10 +10,10 @@ async function main() {
   }
 
   const locker = await ethers.deployContract("ERC20Locker");
-  await locker.deployTransaction.wait()
+  await locker.waitForDeployment()
 
   console.log(
-    `ETHLocker deployed to ${locker.deployTransaction.creates}`
+    `ETHLocker deployed to ${locker.target}`
   );
 }
 
