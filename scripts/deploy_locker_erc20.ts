@@ -3,24 +3,13 @@ import hardhat from "hardhat";
 const prompt = require('prompt-sync')();
 
 async function main() {
-  const confirm = prompt(`Deploy ETHLocker to ${hardhat.network.name}? CONFIRM? `);
-
+  const confirm = prompt(`Deploy ERC20Locker to ${hardhat.network.name}? CONFIRM? `);
   if(confirm != 'CONFIRM') {
     console.log("Abandoning");
     process.exit(0)
   }
 
-  let usdEthOracle
-
-  if(hardhat.network.name == "mainnet") {
-    usdEthOracle = "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
-  }
-
-  if(hardhat.network.name == "goerli") {
-    usdEthOracle = "0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e"
-  }
-
-  const locker = await ethers.deployContract("ETHLocker", [usdEthOracle]);
+  const locker = await ethers.deployContract("ERC20Locker");
   await locker.deployTransaction.wait()
 
   console.log(
