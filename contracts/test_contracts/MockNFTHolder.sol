@@ -12,7 +12,12 @@ interface IERC721Receiver {
 }
 
 contract MockNFTHolder is IERC721Receiver {
-    function onERC721Received(address, address, uint256, bytes memory) public virtual returns (bytes4) {
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes memory
+    ) public virtual returns (bytes4) {
         return this.onERC721Received.selector;
     }
 }

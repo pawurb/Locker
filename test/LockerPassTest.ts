@@ -36,7 +36,7 @@ describe("LockerPass NFT", () => {
   })
 
   it("can be deployed and has correct attributes", async () => {
-    assert.ok(lop.address)
+    assert.ok(lop.target)
     expect(await lop.name()).to.eq("LockerPass")
     expect(await lop.symbol()).to.eq("LOP")
   })
@@ -288,7 +288,7 @@ describe("LockerPass NFT", () => {
           .connect(user2)
           ["safeTransferFrom(address,address,uint256)"](
             user2.address,
-            nftNonHolder.address,
+            nftNonHolder.target,
             TOKEN_ID
           ),
         "ERC721InvalidReceiver"
@@ -300,11 +300,11 @@ describe("LockerPass NFT", () => {
         .connect(user2)
         ["safeTransferFrom(address,address,uint256)"](
           user2.address,
-          nftHolder.address,
+          nftHolder.target,
           TOKEN_ID
         )
       let newOwner = await lop.ownerOf(TOKEN_ID)
-      expect(newOwner).to.equal(nftHolder.address)
+      expect(newOwner).to.equal(nftHolder.target)
     })
   })
 

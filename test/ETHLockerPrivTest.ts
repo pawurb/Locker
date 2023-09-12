@@ -14,10 +14,10 @@ const advanceByDays = async (days) => {
 }
 
 describe("ETHLockerPriv", () => {
-  let smartHold
+  let locker
   let owner
   let notOwner
-  const value = ethers.utils.parseEther("2.01")
+  const value = new BN(ethers.parseEther("0.21"))
   const lockForDays = 100
 
   const setup = async (opts) => {
@@ -34,12 +34,12 @@ describe("ETHLockerPriv", () => {
     )
     const ETHLockerPriv = await ethers.getContractFactory("ETHLockerPriv")
     const priceFeed = await PriceFeedMock.deploy(opts.currentPrice * 10e7)
-    smartHold = await ETHLockerPriv.deploy(
-      priceFeed.address,
+    locker = await ETHLockerPriv.deploy(
+      priceFeed.target,
       opts.lockForDays,
       opts.minimumPrice,
       {
-        value: value,
+        value: value.toString(),
       }
     )
   }
@@ -62,26 +62,26 @@ describe("ETHLockerPriv", () => {
     })
 
     it("contract gets deployed to test network and accepts initial ETH transfer", async () => {
-      assert.ok(smartHold.address)
+      assert.ok(locker.target)
 
-      expect(await ethers.provider.getBalance(smartHold.address)).to.equal(
+      expect(await ethers.provider.getBalance(locker.target)).to.equal(
         value
       )
     })
 
     it("sets the correct owner and other attributes", async () => {
-      assert.equal(await smartHold.owner(), owner.address)
+      assert.equal(await locker.owner(), owner.address)
 
-      assert.equal(await smartHold.lockForDays(), 100)
+      assert.equal(await locker.lockForDays(), 100)
 
-      assert.equal(await smartHold.minimumPrice(), 10000)
+      assert.equal(await locker.minimumPrice(), 10000)
     })
 
     it("accepts more ETH transfer after deployment", async () => {
-      await owner.sendTransaction({ value: value, to: smartHold.address })
+      await owner.sendTransaction({ value: value.toString(), to: locker.target })
 
-      expect(await ethers.provider.getBalance(smartHold.address)).to.equal(
-        value.mul(2)
+      expect(await ethers.provider.getBalance(locker.target)).to.equal(
+        value.add(value)
       )
     })
   })
@@ -89,23 +89,23 @@ describe("ETHLockerPriv", () => {
   describe("'withdraw'", async () => {
     it("can only be called by the deposit contract owner", async () => {
       await expectRevert(
-        smartHold.connect(notOwner).withdraw(),
+        locker.connect(notOwner).withdraw(),
         "Access denied"
       )
     })
 
     it("required time did not pass yet, it does not withdraw funds", async () => {
-      await expectRevert(smartHold.withdraw(), "Cannot withdraw")
+      await expectRevert(locker.withdraw(), "Cannot withdraw")
     })
 
     it("required time has already passed, it withdraws funds", async () => {
       await advanceByDays(lockForDays + 1)
-      const canWithdrawAfter = await smartHold.canWithdraw()
+      const canWithdrawAfter = await locker.canWithdraw()
       expect(canWithdrawAfter).to.equal(true)
 
-      await expect(smartHold.withdraw()).to.changeEtherBalances(
-        [owner, smartHold],
-        [value, value.mul(-1)]
+      await expect(locker.withdraw()).to.changeEtherBalances(
+        [owner, locker],
+        [value.toString(), value.sub(value).sub(value).toString()]
       )
     })
   })
@@ -117,7 +117,7 @@ describe("ETHLockerPriv", () => {
       })
 
       it("it withdraws funds", async () => {
-        const canWithdraw = await smartHold.canWithdraw()
+        const canWithdraw = await locker.canWithdraw()
         expect(canWithdraw).to.equal(true)
       })
     })
@@ -128,7 +128,7 @@ describe("ETHLockerPriv", () => {
       })
 
       it("it does not withdraw funds", async () => {
-        const canWithdraw = await smartHold.canWithdraw()
+        const canWithdraw = await locker.canWithdraw()
         expect(canWithdraw).to.equal(false)
       })
     })
@@ -139,7 +139,7 @@ describe("ETHLockerPriv", () => {
       })
 
       it("it does not withdraw funds", async () => {
-        const canWithdraw = await smartHold.canWithdraw()
+        const canWithdraw = await locker.canWithdraw()
         expect(canWithdraw).to.equal(false)
       })
     })
@@ -150,7 +150,7 @@ describe("ETHLockerPriv", () => {
           minimumPrice: 1500,
           priceFeedContract: "BuggyPriceFeedMock",
         })
-        await expectRevert(smartHold.canWithdraw(), "Price oracle bug!")
+        await expectRevert(locker.canWithdraw(), "Price oracle bug!")
       })
     })
 
@@ -163,7 +163,7 @@ describe("ETHLockerPriv", () => {
         })
 
         await advanceByDays(lockForDays + 1)
-        const canWithdraw = await smartHold.canWithdraw()
+        const canWithdraw = await locker.canWithdraw()
         expect(canWithdraw).to.equal(true)
       })
     })
