@@ -20,7 +20,8 @@ const config: HardhatUserConfig = {
     },
     mainnet: {
       url: secrets["mainnetEndpoint"],
-      accounts: [secrets["mainnetPrivateKey"]]
+      accounts: [secrets["mainnetPrivateKey"]],
+      // gasPrice: 7000000000
     }
   },
   etherscan: {
