@@ -78,6 +78,7 @@ contract LockerPass is IERC721 {
 
     error ERC721NonexistentToken(uint256 tokenId);
     error ERC721InvalidReceiver(address receiver);
+    error ERC721InvalidAddress(address target);
 
     modifier requireMinted(uint256 _tokenId) {
         if (_ownerOf(_tokenId) == address(0)) {
@@ -109,6 +110,10 @@ contract LockerPass is IERC721 {
     }
 
     function balanceOf(address _owner) external view returns (uint256) {
+        if (_owner == address(0)) {
+            revert ERC721InvalidAddress(_owner);
+        }
+
         return _balances[_owner];
     }
 

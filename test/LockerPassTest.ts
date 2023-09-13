@@ -481,6 +481,18 @@ describe("LockerPass NFT", () => {
       )
     })
 
+    it("balanceOf the zero address", async () => {
+      await expectRevert(
+        ozNFT.connect(user2).balanceOf(constants.ZERO_ADDRESS),
+        "address zero is not a valid owner"
+      )
+
+      await expectRevert(
+        lop.connect(user2).balanceOf(constants.ZERO_ADDRESS),
+        "ERC721InvalidAddress"
+      )
+    })
+
     it("trying to approve not owned token", async () => {
       await expectRevert(
         ozNFT.connect(user3).approve(user3.address, TOKEN_ID),
