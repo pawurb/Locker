@@ -68,9 +68,15 @@ describe("LockerPass NFT", () => {
     })
 
     it("changes owner of a correct NFT token", async () => {
+      let ownerBefore = await lop.ownerOf(TOKEN_ID)
+      expect(ownerBefore).to.equal(user2.address)
+
       await expect(
         lop.connect(user2).transferFrom(user2.address, user3.address, TOKEN_ID)
       ).to.changeTokenBalances(lop, [user2.address, user3.address], [-1, 1])
+
+      let ownerAfter = await lop.ownerOf(TOKEN_ID)
+      expect(ownerAfter).to.equal(user3.address)
     })
 
     it("emits a correct Transfer event", async () => {
@@ -244,6 +250,9 @@ describe("LockerPass NFT", () => {
     })
 
     it("changes owner of a correct NFT token", async () => {
+      let ownerBefore = await lop.ownerOf(TOKEN_ID)
+      expect(ownerBefore).to.equal(user2.address)
+
       await expect(
         lop
           .connect(user2)
@@ -253,6 +262,9 @@ describe("LockerPass NFT", () => {
             TOKEN_ID
           )
       ).to.changeTokenBalances(lop, [user2.address, user3.address], [-1, 1])
+
+      let ownerAfter = await lop.ownerOf(TOKEN_ID)
+      expect(ownerAfter).to.equal(user3.address)
     })
 
     it("emits a correct Transfer event", async () => {
