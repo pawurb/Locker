@@ -247,6 +247,20 @@ describe("ETHLocker", () => {
       )
     })
 
+    it("frozen token can still be used to withdraw deposit", async () => {
+      await locker.configureDeposit(10, 1100, { value: oneEther.toString() })
+      await lockerPass.freeze(DEPOSIT_ID)
+      let isFrozen = await lockerPass.isFrozen(DEPOSIT_ID)
+      expect(isFrozen).to.equal(true)
+      await advanceByDays(11)
+
+      await expect(locker.withdraw(DEPOSIT_ID)).to.changeTokenBalances(
+        lockerPass,
+        [user1],
+        [-1]
+      )
+    })
+
     it("sends correct amound funds and does not affect deposits of other users", async () => {
       await locker.configureDeposit(10, 1100, { value: twoEther.toString() })
       await locker

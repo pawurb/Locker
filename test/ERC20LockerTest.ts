@@ -381,6 +381,31 @@ describe("ERC20Locker", () => {
       expect(depositData.balance).to.equal(0)
     })
 
+    it("frozen token can still be used to withdraw deposit", async () => {
+      await locker.configureDepositWithPrice(
+        tokenA.target,
+        20,
+        priceFeed.target,
+        150,
+        10e7
+      )
+      await tokenA.approve(locker.target, 50)
+      await locker.deposit(tokenA.target, 50, DEPOSIT_ID)
+
+      await expectRevert(locker.withdraw(DEPOSIT_ID), "cannot withdraw")
+
+      await lockerPass.freeze(DEPOSIT_ID)
+      let isFrozen = await lockerPass.isFrozen(DEPOSIT_ID)
+      expect(isFrozen).to.equal(true)
+      await advanceByDays(30)
+
+      await expect(locker.withdraw(DEPOSIT_ID)).to.changeTokenBalances(
+        tokenA,
+        [locker.target, user1.address],
+        [-50, 50]
+      )
+    })
+
     it("does not affect balances of other users", async () => {
       await locker.configureDeposit(tokenA.target, 20)
       await tokenA.approve(locker.target, 50)
