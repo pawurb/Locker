@@ -324,6 +324,19 @@ describe("LockerPass NFT", () => {
       let newOwner = await lop.ownerOf(TOKEN_ID)
       expect(newOwner).to.equal(nftHolder.target)
     })
+
+    it("when passing data it transfers NFT to contract which implements 'onERC721Received' callback", async () => {
+      await lop
+        .connect(user2)
+        ["safeTransferFrom(address,address,uint256,bytes)"](
+          user2.address,
+          nftHolder.target,
+          TOKEN_ID,
+          "0x"
+        )
+      let newOwner = await lop.ownerOf(TOKEN_ID)
+      expect(newOwner).to.equal(nftHolder.target)
+    })
   })
 
   describe("'approve'", async () => {
