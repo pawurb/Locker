@@ -496,6 +496,26 @@ describe("LockerPass NFT", () => {
       await ozNFT.connect(user2).mint()
     })
 
+    it("'mint' emits a correct event", async () => {
+      await expect(ozNFT.mint())
+        .to.emit(ozNFT, "Transfer")
+        .withArgs(constants.ZERO_ADDRESS, admin.address, TOKEN_ID + 1)
+
+      await expect(lop.mint(user2.address))
+        .to.emit(lop, "Transfer")
+        .withArgs(constants.ZERO_ADDRESS, user2.address, TOKEN_ID + 2)
+    })
+
+    it("'burn' emits a correct event", async () => {
+      await expect(ozNFT.burn(TOKEN_ID))
+        .to.emit(ozNFT, "Transfer")
+        .withArgs(user2.address, constants.ZERO_ADDRESS, TOKEN_ID)
+
+      await expect(lop.burn(TOKEN_ID))
+        .to.emit(lop, "Transfer")
+        .withArgs(user2.address, constants.ZERO_ADDRESS, TOKEN_ID)
+    })
+
     it("sending token to the zero address", async () => {
       await expectRevert(
         ozNFT

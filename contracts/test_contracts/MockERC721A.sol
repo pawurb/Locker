@@ -13,4 +13,8 @@ contract MockERC721A is ERC721 {
         _mint(msg.sender, totalSupply);
         totalSupply = totalSupply + 1;
     }
+
+    function burn(uint256 _tokenId) public {
+        _burn(_tokenId);
+    }
 }

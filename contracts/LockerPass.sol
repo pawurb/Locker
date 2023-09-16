@@ -139,6 +139,8 @@ contract LockerPass is IERC721 {
         address owner = _ownerOf(_tokenId);
         _balances[owner] -= 1;
         _owners[_tokenId] = address(0);
+
+        emit Transfer(owner, address(0), _tokenId);
     }
 
     function approve(
