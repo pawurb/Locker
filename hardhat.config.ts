@@ -20,12 +20,19 @@ const config: HardhatUserConfig = {
     },
     mainnet: {
       url: secrets["mainnetEndpoint"],
-      accounts: [secrets["mainnetPrivateKey"]],
-      // gasPrice: 7000000000
+      accounts: [secrets["mainnetPrivateKey"]]
+    },
+    arbitrum: {
+      url: secrets["arbitrumEndpoint"],
+      accounts: [secrets["arbitrumPrivateKey"]]
     }
   },
   etherscan: {
-    apiKey: secrets["etherscanAPIKey"]
+    apiKey: {
+      mainnet: secrets["etherscanAPIKey"],
+      arbitrumOne: secrets["arbiscanAPIKey"]
+    }
+
   }
 };
 
