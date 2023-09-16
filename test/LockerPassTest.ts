@@ -60,6 +60,12 @@ describe("LockerPass NFT", () => {
 
       expect(await lop.ownerOf(TOKEN_ID)).to.eq(user2.address)
     })
+
+    it("emits a correct Transfer event", async () => {
+      await expect(lop.mint(user2.address))
+        .to.emit(lop, "Transfer")
+        .withArgs(constants.ZERO_ADDRESS, user2.address, TOKEN_ID)
+    })
   })
 
   describe("'transferFrom'", async () => {

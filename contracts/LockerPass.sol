@@ -131,6 +131,7 @@ contract LockerPass is IERC721 {
             _balances[_to] += 1;
         }
 
+        emit Transfer(address(0), _to, nextId);
         nextId = nextId + 1;
     }
 
