@@ -439,7 +439,7 @@ npx hardhat test
 
 ```bash
 docker pull trailofbits/eth-security-toolbox
-docker run -it -v ~/Locker/:/share trailofbits/eth-security-toolbox
+docker run -it -v ./:/share/Locker trailofbits/eth-security-toolbox
 cd /share/Locker
 slither .
 ```
