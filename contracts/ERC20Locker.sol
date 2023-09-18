@@ -128,7 +128,12 @@ contract ERC20Locker {
     ) external onlyDepositOwner(msg.sender, _depositId) {
         DepositData storage depositData = deposits[_depositId];
 
-        IERC20(_token).transferFrom(msg.sender, address(this), _amount);
+        bool success = IERC20(_token).transferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        );
+        require(success, "Deposit failed");
         depositData.balance = depositData.balance + _amount;
     }
 
@@ -160,7 +165,8 @@ contract ERC20Locker {
         delete deposits[_depositId];
         lockerPass.burn(_depositId);
 
-        IERC20(depositData.token).transfer(msg.sender, balance);
+        bool success = IERC20(depositData.token).transfer(msg.sender, balance);
+        require(success, "Transfer failed");
     }
 
     function increaseMinExpectedPrice(

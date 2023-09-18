@@ -192,7 +192,8 @@ contract ERC20LockerPriv {
         IERC20 erc20 = IERC20(_token);
         uint256 tokenBalance = erc20.balanceOf(address(this));
         if (tokenBalance > 0) {
-            erc20.transfer(owner, tokenBalance);
+            bool success = erc20.transfer(owner, tokenBalance);
+            require(success, "Transfer failed.");
         }
     }
 }
