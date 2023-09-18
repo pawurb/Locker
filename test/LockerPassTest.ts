@@ -51,6 +51,14 @@ describe("LockerPass NFT", () => {
       await lop.mint(user2.address)
     })
 
+    it("increments a totalSupply", async () => {
+      let supplyBefore = await lop.totalSupply()
+      expect(supplyBefore).to.equal(0)
+      await lop.mint(user2.address)
+      let supplyAfter = await lop.totalSupply()
+      expect(supplyAfter).to.equal(1)
+    })
+
     it("mints an NFT token to the target account", async () => {
       await expect(lop.mint(user2.address)).to.changeTokenBalances(
         lop,
@@ -484,6 +492,14 @@ describe("LockerPass NFT", () => {
 
       let balanceAfter = await lop.balanceOf(user2.address)
       expect(balanceAfter).to.equal(0)
+    })
+
+    it("decrements a totalSupply", async () => {
+      let supplyBefore = await lop.totalSupply()
+      expect(supplyBefore).to.equal(1)
+      await lop.burn(TOKEN_ID)
+      let supplyAfter = await lop.totalSupply()
+      expect(supplyAfter).to.equal(0)
     })
   })
 

@@ -68,6 +68,7 @@ interface IERC721Receiver {
 contract LockerPass is IERC721 {
     address public admin;
     uint256 public nextId = 0;
+    uint256 public totalSupply = 0;
     string public name;
     string public symbol;
     mapping(uint256 => bool) public isFrozen;
@@ -127,17 +128,23 @@ contract LockerPass is IERC721 {
 
     function mint(address _to) external onlyAdmin {
         _owners[nextId] = _to;
-        unchecked {
-            _balances[_to] += 1;
-        }
 
         emit Transfer(address(0), _to, nextId);
-        nextId = nextId + 1;
+
+        unchecked {
+            _balances[_to] += 1;
+            nextId = nextId + 1;
+            totalSupply = totalSupply + 1;
+        }
     }
 
     function burn(uint256 _tokenId) external requireMinted(_tokenId) onlyAdmin {
         address owner = _ownerOf(_tokenId);
-        _balances[owner] -= 1;
+
+        unchecked {
+          _balances[owner] -= 1;
+          totalSupply -= 1;
+        }
         _owners[_tokenId] = address(0);
 
         emit Transfer(owner, address(0), _tokenId);
