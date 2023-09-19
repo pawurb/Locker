@@ -142,8 +142,8 @@ contract LockerPass is IERC721 {
         address owner = _ownerOf(_tokenId);
 
         unchecked {
-          _balances[owner] -= 1;
-          totalSupply -= 1;
+            _balances[owner] -= 1;
+            totalSupply -= 1;
         }
         _owners[_tokenId] = address(0);
 

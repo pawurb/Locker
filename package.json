@@ -10,7 +10,7 @@
     "test": "npx hardhat node & sleep 5 && npx hardhat test",
     "compile": "npx hardhat compile",
     "lint": "solhint 'contracts/*.sol'",
-    "pretty": "npx prettier --write 'contracts/*.sol' && npx prettier --write 'test/'"
+    "pretty": "npx prettier --write 'contracts/*.sol' 'contracts/test_contracts/*.sol' && npx prettier --write 'test/'"
   },
   "repository": {
     "type": "git",

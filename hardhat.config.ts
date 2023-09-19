@@ -34,10 +34,10 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       mainnet: secrets["etherscanAPIKey"],
+      goerli: secrets["etherscanAPIKey"],
       arbitrumOne: secrets["arbiscanAPIKey"],
       optimisticEthereum: secrets["optimisticAPIKey"]
     }
-
   }
 };
 
