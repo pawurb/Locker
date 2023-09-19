@@ -13,7 +13,7 @@ async function main() {
   await locker.waitForDeployment()
 
   console.log(
-    `ETHLocker deployed to ${locker.target}`
+    `ERC20Locker deployed to ${locker.target}`
   );
 }
 
