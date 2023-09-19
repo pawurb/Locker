@@ -421,6 +421,7 @@ ETH/USD price oracles powered by [ChainLink](https://docs.chain.link/docs/get-th
 * [Mainnet](https://etherscan.io/address/0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419)
 * [Goerli](https://goerli.etherscan.io/address/0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e)
 * [Arbitrum Mainnet](https://arbiscan.io/address/0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612)
+* [Optimism Mainnet](https://optimistic.etherscan.io/address/0x13e3Ee699D1909E989722E753853AE30b17e08c5)
 
 [More price feeds](https://docs.chain.link/data-feeds/price-feeds/addresses/).
 

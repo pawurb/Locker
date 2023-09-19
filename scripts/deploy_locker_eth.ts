@@ -24,6 +24,10 @@ async function main() {
     usdEthOracle = "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612"
   }
 
+  if(hardhat.network.name == "optimism") {
+    usdEthOracle = "0x13e3Ee699D1909E989722E753853AE30b17e08c5"
+  }
+
   const locker = await ethers.deployContract("ETHLocker", [usdEthOracle]);
   await locker.waitForDeployment()
 

@@ -25,12 +25,17 @@ const config: HardhatUserConfig = {
     arbitrum: {
       url: secrets["arbitrumEndpoint"],
       accounts: [secrets["arbitrumPrivateKey"]]
+    },
+    optimism: {
+      url: secrets["optimismEndpoint"],
+      accounts: [secrets["arbitrumPrivateKey"]]
     }
   },
   etherscan: {
     apiKey: {
       mainnet: secrets["etherscanAPIKey"],
-      arbitrumOne: secrets["arbiscanAPIKey"]
+      arbitrumOne: secrets["arbiscanAPIKey"],
+      optimisticEthereum: secrets["optimisticAPIKey"]
     }
 
   }
