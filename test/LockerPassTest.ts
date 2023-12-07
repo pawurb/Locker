@@ -544,7 +544,7 @@ describe("LockerPass NFT", () => {
         lop
           .connect(user2)
           .transferFrom(user2.address, constants.ZERO_ADDRESS, TOKEN_ID),
-        "ERC721InvalidReceiver"
+        "ERC721InvalidAddress"
       )
     })
 

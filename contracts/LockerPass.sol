@@ -187,7 +187,7 @@ contract LockerPass is IERC721 {
         require(!isFrozen[_tokenId], "Token is frozen!");
 
         if (_to == address(0)) {
-            revert ERC721InvalidReceiver(_to);
+            revert ERC721InvalidAddress(_to);
         }
         _checkAuthorized(msg.sender, _tokenId);
 
