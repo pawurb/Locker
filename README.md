@@ -1,4 +1,4 @@
-# Locker - provides a way to lock and hold your ETH, ERC20 or ERC721 in a smart contract
+# Locker - provides a way to lock and hold your ETH, ERC20 or ERC721 in a smart contract [![GH Actions](https://github.com/pawurb/Locker/actions/workflows/ci.yml/badge.svg)](https://github.com/pawurb/Locker/actions)
 
 **This is a BETA software that has not been audited for security. Incorrectly using these smart contracts can result in irreversible loss of your funds. USE AT YOUR OWN RISK!**
 

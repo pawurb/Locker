@@ -1,0 +1,25 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+      - run: npm i
+      - name: Run Linter
+        run: npm run lint
+      - name: Hardhat config
+        run: mv hardhat.config.ts.ci hardhat.config.ts
+      - name: Run Compile
+        run: npx hardhat compile
+      - name: Run node and tests
+        run: npx hardhat node & sleep 5 && npx hardhat test --network localhost
