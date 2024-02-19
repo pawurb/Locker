@@ -31,6 +31,17 @@ contract ETHLocker {
         uint256 balance;
     }
 
+    event Deposit(
+        address indexed by,
+        uint256 indexed depositId,
+        uint256 indexed amount
+    );
+    event Withdrawal(
+        address indexed by,
+        uint256 indexed depositId,
+        uint256 indexed amount
+    );
+
     address private constant ZERO_ADDRESS = address(0x0);
     string private constant ERRNOTCONFIGURED = "Deposit not configured.";
 
@@ -60,7 +71,12 @@ contract ETHLocker {
 
         uint256 newDepositId = lockerPass.nextId();
         lockerPass.mint(msg.sender);
+
         deposits[newDepositId] = newDeposit;
+
+        if (msg.value > 0) {
+            emit Deposit(msg.sender, newDepositId, msg.value);
+        }
     }
 
     function deposit(
@@ -68,6 +84,10 @@ contract ETHLocker {
     ) external payable onlyDepositOwner(msg.sender, _depositId) {
         DepositData storage depositData = deposits[_depositId];
         depositData.balance = depositData.balance + msg.value;
+
+        if (msg.value > 0) {
+            emit Deposit(msg.sender, _depositId, msg.value);
+        }
     }
 
     function canWithdraw(uint256 _depositId) public view returns (bool) {
@@ -98,6 +118,8 @@ contract ETHLocker {
         delete deposits[_depositId];
         lockerPass.burn(_depositId);
         payable(msg.sender).transfer(balance);
+
+        emit Withdrawal(msg.sender, _depositId, balance);
     }
 
     function getETHPrice() public view returns (int256) {

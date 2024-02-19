@@ -137,6 +137,18 @@ describe("ETHLocker", () => {
       )
     })
 
+    it("emits a correct event", async () => {
+      await expect(
+        locker.configureDeposit(10, 0, { value: oneEther.toString() })
+      )
+        .to.emit(locker, "Deposit")
+        .withArgs(user1.address, DEPOSIT_ID, oneEther.toString())
+
+      await expect(locker.deposit(DEPOSIT_ID, { value: twoEther.toString() }))
+        .to.emit(locker, "Deposit")
+        .withArgs(user1.address, DEPOSIT_ID, twoEther.toString())
+    })
+
     it("accepts funds and increases correct account balance", async () => {
       await locker.configureDeposit(10, 0, { value: oneEther.toString() })
       expect((await locker.deposits(DEPOSIT_ID)).balance).to.equal(oneEther)
@@ -280,6 +292,15 @@ describe("ETHLocker", () => {
 
       expect((await locker.deposits(DEPOSIT_ID)).balance).to.equal(twoEther)
       expect((await locker.deposits(DEPOSIT_ID + 1)).balance).to.equal(0)
+    })
+
+    it("emits a correct event", async () => {
+      await locker.configureDeposit(10, 1100, { value: oneEther.toString() })
+      await advanceByDays(11)
+
+      await expect(locker.withdraw(DEPOSIT_ID))
+        .to.emit(locker, "Withdrawal")
+        .withArgs(user1.address, DEPOSIT_ID, oneEther.toString())
     })
 
     it("does not allow withdrawals by account that don't own correct LockerPass NFT", async () => {
