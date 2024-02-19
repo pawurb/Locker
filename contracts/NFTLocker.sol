@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.17;
+pragma solidity 0.8.19;
 
 interface IERC721 {
     event Transfer(
@@ -61,7 +61,7 @@ interface IERC721Receiver {
     ) external returns (bytes4);
 }
 
-pragma solidity 0.8.17;
+pragma solidity 0.8.19;
 
 contract NFTLocker {
     mapping(address => mapping(address => mapping(uint256 => DepositData)))

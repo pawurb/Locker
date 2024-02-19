@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.17;
+import {LockerPass} from "./LockerPass.sol";
+
+pragma solidity 0.8.19;
 
 interface PriceFeedInterface {
     function latestRoundData()
@@ -15,9 +17,7 @@ interface PriceFeedInterface {
         );
 }
 
-pragma solidity 0.8.17;
-
-import "./LockerPass.sol";
+pragma solidity 0.8.19;
 
 contract ETHLocker {
     PriceFeedInterface internal priceFeed;
