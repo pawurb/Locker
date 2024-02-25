@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.19;
 
+import {LockerPass} from "./LockerPass.sol";
+
 interface IERC20 {
     function totalSupply() external view returns (uint256);
 
@@ -47,8 +49,6 @@ interface PriceFeedInterface {
 }
 
 pragma solidity 0.8.19;
-
-import "./LockerPass.sol";
 
 contract ERC20Locker {
     mapping(uint256 => DepositData) public deposits;
